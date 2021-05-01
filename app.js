@@ -4,7 +4,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const mongoose = require("mongoose");
-const {AppError, SystemError} = require('./controllers/errors');
+const {AppError, ServerError} = require('./controllers/errors');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const accountsRouter = require('./routes/accounts');
@@ -32,7 +32,7 @@ app.use((req, res, next) => next(createError(404)));
 // error handler
 app.use((err, req, res, next) => {
   let error = err;
-  if (!(err instanceof AppError)) error = new SystemError(err); // not ours so it's unknown
+  if (!(err instanceof AppError)) error = new ServerError(err); // not ours so it's unknown
   res.status(error.statusCode);
   res.json({
     code: error.code,

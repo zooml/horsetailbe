@@ -1,8 +1,8 @@
-const {UserError, CastError} = require('./errors');
+const {AppError, CastError} = require('./errors');
 
 const decode_err = err => {
   let error = err;
-  if (!(err instanceof UserError)) {
+  if (!(err instanceof AppError)) {
     if (err.name === 'CastError') error = new CastError(err);
 
     // TODO other db handlers from https://medium.com/@SigniorGratiano/express-error-handling-674bfdd86139
