@@ -9,7 +9,7 @@ const Schema = mongoose.Schema;
     EXPENSE: {id: 5, credit: false}
   });
 
-const AccountSchema   = new Schema({
+const AccountSchema = new Schema({
   userId: {type: String, required: true},
   name: {type: String, required: true, unique: true},
   num: {type: Number, required: true, unique: true},
