@@ -1,14 +1,14 @@
-const createError = require('http-errors');
-const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
-const mongoose = require("mongoose");
-const {AppError, ServerError, NotFound} = require('./controllers/errors');
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
-const accountsRouter = require('./routes/accounts');
-const cors = require('cors');
+import createError from 'http-errors';
+import express from 'express';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import mongoose from 'mongoose';
+import {AppError, ServerError, NotFound} from './controllers/errors';
+import indexRouter from './routes/index';
+import usersRouter from './routes/users';
+import accountsRouter from './routes/accounts';
+import cors from 'cors';
 
 const app = express();
 
@@ -31,17 +31,14 @@ app.use(prefix + 'users', usersRouter);
 app.use(prefix + 'accounts', accountsRouter);
 
 // default: 'no api' 404 and forward to error handler
-app.use((req, res, next) => next(new NotFound({
-  path: req.path.startsWith(prefix) ? req.path.substring(prefix.length) : (
-    req.path.length <= 1 ? '(empty)' : req.path.substring(1))
-})));
+app.use((req, res, next) => next(new NotFound(req.path)));
 
 // error handler
 app.use((err, req, res, next) => {
   if (res.headersSent) {// delegate to express
     return next(err);
   }
-  if (err instanceof createError.HttpError) { // maybe set by express
+  if (err instanceof createError.HttpError) { // may be set by express
     res.status(err.statusCode);
     res.json({}); // TODO
   } else {
