@@ -14,9 +14,9 @@ const schema = new Schema({
   kind: {type: String, required: true}, // TODO
   entAt: {type: Date, required: true}, // entry date
   amts: [{
-    acId: {type: ObjectId, ref: ACCOUNT_NAME, required: true}, 
+    acId: {type: ObjectId, ref: ACCOUNT_NAME, required: true},
     fund: {type: Number, required: true},
-    amt: {type: Number, required: true}, 
+    amt: {type: Number, required: true},
     note: String
   }],
   extRef: String,

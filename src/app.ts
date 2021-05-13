@@ -1,8 +1,8 @@
+import express, {Request, Response, NextFunction} from 'express';
 import createError from 'http-errors';
-import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
-import logger from 'morgan';
+import logger, {loggerMiddleware} from './utils/logger';
 import mongoose from 'mongoose';
 import {AppError, ServerError, NotFound} from './controllers/errors';
 import indexRouter from './routes/index';
@@ -12,14 +12,14 @@ import cors from 'cors';
 
 const app = express();
 
-// view engine setup
+// view engine setup TODO needed?????
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
-// TODO don't execute if production
-app.use(cors());
+app.use(loggerMiddleware);
 
-app.use(logger('dev'));
+if (process.env.NODE_ENV !== 'production') app.use(cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -34,8 +34,8 @@ app.use(prefix + 'accounts', accountsRouter);
 app.use((req, res, next) => next(new NotFound(req.path)));
 
 // error handler
-app.use((err, req, res, next) => {
-  if (res.headersSent) {// delegate to express
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (res.headersSent) { // delegate to express
     return next(err);
   }
   if (err instanceof createError.HttpError) { // may be set by express
@@ -57,6 +57,6 @@ app.use((err, req, res, next) => {
 // TODO config
 mongoose
 	.connect("mongodb://localhost:27017/horsetaildb", {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true})
-	.then(() => console.log('mongoose initialized'));
+	.then(() => logger.info('mongoose initialized'));
 
-module.exports = app;
+export default app;

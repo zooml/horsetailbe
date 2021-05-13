@@ -1,3 +1,5 @@
+import {logError, logWarn} from '../utils/logger';
+
 export class AppError extends Error {
   statusCode: number;
   code: number;
@@ -14,7 +16,7 @@ export const SERVER_ERROR = 1;
 export class ServerError extends AppError {
   constructor(err?: any) {
     super('internal server error', 500, exports.SERVER_ERROR);
-    console.error(`server error: ${err?.message ? err.message: 'unknown'}`);
+    logError(`server error: ${err?.message ? err.message: 'unknown'}`);
     // TODO log stack trace?
   }
 }
@@ -22,7 +24,7 @@ export class ServerError extends AppError {
 export class UserError extends AppError {
   constructor(message: string, statusCode: number, code: number) {
     super(message, statusCode, code);
-    console.error(`user error (${statusCode}, ${code}): ${message ? message : 'unknown'}`);
+    logWarn(`user error (${statusCode}, ${code}): ${message ? message : 'unknown'}`);
   }
 }
 

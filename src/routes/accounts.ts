@@ -1,8 +1,9 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
-import {BadRequest, DependentError, DupError, RefError, ValueError} from '../controllers/errors';
+import {DependentError, DupError, RefError, ValueError} from '../controllers/errors';
 import {Account, accountModel, findCatById} from '../models/account';
 import {trimOrUndef} from '../utils/util';
+import {logRes} from '../utils/logger';
 
 const toDoc = (o: {[key: string]: any}): Account => {
   // TODO does this validate???? yes e.g. required
@@ -91,7 +92,7 @@ const validateNum = async (num: number, paNum?: number) => {
 };
 
 const validate = async (o: Account) => {
-  if ((o.catId !== undefined && o.paId !== undefined) || 
+  if ((o.catId !== undefined && o.paId !== undefined) ||
     (o.catId === undefined && o.paId === undefined)) throw new DependentError('paId', 'catId', true);
   if (o.paId) {
     const parent = await accountModel.findById(o.paId);
@@ -113,6 +114,7 @@ router.get('/', modelRoute(async (req: Request, res: Response) => {
   // TODO page limit
   const resDocs = await accountModel.find({org: 'org'}).sort({num: 1});
   res.send(resDocs.map(fromDoc));
+  logRes(res);
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
@@ -120,10 +122,12 @@ router.post('/', modelRoute(async (req: Request, res: Response) => {
   await validate(reqDoc);
   const resDoc =  await reqDoc.save();
   res.send(fromDoc(resDoc));
+  logRes(res);
 }));
 
 router.patch('/:account_id', function(req: Request, res: Response) {
   res.send({id: req.params.account_id, name: 'Cash'});
+  logRes(res);
 });
 
 export default router;
