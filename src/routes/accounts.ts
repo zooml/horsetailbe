@@ -3,23 +3,19 @@ import modelRoute from '../controllers/modelroute';
 import {DependentError, DupError, RefError, ValueError} from '../controllers/errors';
 import {Account, accountModel, findCatById} from '../models/account';
 import {trimOrUndef} from '../utils/util';
-import {logRes} from '../utils/logger';
+import {logRes} from '../controllers/logger';
 
-const toDoc = (o: {[key: string]: any}): Account => {
-  // TODO does this validate???? yes e.g. required
-  // TODO begAt must be after the last close
-  return new accountModel({
-    oId: 'org', // TODO
-    uId: 'joe', // TODO
-    num: o.num,
-    name: trimOrUndef(o.name),
-    begAt: o.begAt,
-    note: trimOrUndef(o.note),
-    paId: trimOrUndef(o.paId),
-    catId: o.catId,
-    isCr: o.isCr,
-  });
-};
+const toDoc = (o: {[key: string]: any}): Account => new accountModel({
+  oId: 'org', // TODO
+  uId: 'joe', // TODO
+  num: o.num,
+  name: trimOrUndef(o.name),
+  begAt: o.begAt,
+  note: trimOrUndef(o.note),
+  paId: trimOrUndef(o.paId),
+  catId: o.catId,
+  isCr: o.isCr,
+});
 
 const fromDoc = (o: Account): {[key: string]: any} => ({
   id: o._id,
@@ -38,17 +34,6 @@ const fromDoc = (o: Account): {[key: string]: any} => ({
   upAt: o.upAt,
   v: o.__v
 });
-
-const power10 = (s: string): number => {
-  const len = s.length;
-  let i = 1;
-  for (; i < len; ++i) {
-    if (s[-i] !== '0') {
-      break;
-    }
-  }
-  return i - 1;
-}
 
 const digitsAndPower = (n: number): number[] => {
   let digits = 1;
@@ -106,6 +91,8 @@ const validate = async (o: Account) => {
     delete o.isCr;
     validateNum(o.num.valueOf());
   }
+
+  // TODO begAt must be after the last close
 };
 
 const router = express.Router();

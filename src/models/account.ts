@@ -1,4 +1,4 @@
-import mongoose, {Schema} from 'mongoose';
+import mongoose, {Schema, ObjectId as TObjectId} from 'mongoose';
 import {ORG_NAME} from './org';
 import {USER_NAME} from './user';
 
@@ -30,13 +30,13 @@ export const findCatById = (id: number): Category | undefined => {
 }
 
 export interface Account extends mongoose.Document {
-  readonly oId: typeof ObjectId;
-  readonly uId: typeof ObjectId;
+  readonly oId: TObjectId;
+  readonly uId: TObjectId;
   num: Number;
   name: String;
   begAt: Date;
   note?: String;
-  paId?: typeof ObjectId;
+  paId?: TObjectId;
   catId?: Number;
   isCr?: Boolean;
   closes: [{
@@ -46,9 +46,9 @@ export interface Account extends mongoose.Document {
   }],
   suss: [{
     begAt: Date;
-    bUId: typeof ObjectId;
+    bUId: TObjectId;
     endAt?: Date;
-    eUId?: typeof ObjectId;
+    eUId?: TObjectId;
     note?: String;
   }],
   readonly at: Date;
@@ -59,9 +59,9 @@ const schema = new Schema<Account, mongoose.Model<Account>>({
   oId: {type: ObjectId, ref: ORG_NAME, required: true}, // org
   uId: {type: ObjectId, ref: USER_NAME, required: true}, // create user
   num: {type: Number, required: true},
-  name: {type: String, required: true,},
+  name: {type: String, required: true, trim: true},
   begAt: Date,
-  note: String,
+  note: {type: String, trim: true},
   paId: {type: ObjectId, ref: ACCOUNT_NAME}, // parent, required iif not top-level
   catId: Number, // category, required iif top-level
   isCr: Boolean, // required iif not default
@@ -75,7 +75,7 @@ const schema = new Schema<Account, mongoose.Model<Account>>({
     bUId: {type: ObjectId, ref: USER_NAME, required: true},
     endAt: Date,
     eUId: {type: ObjectId, ref: USER_NAME},
-    note: String
+    note: {type: String, trim: true}
   }]
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 

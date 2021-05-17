@@ -1,16 +1,55 @@
-import mongoose, {Schema} from 'mongoose';
-import {SITE_ACCT_NAME} from './siteacct';
+import mongoose, {Schema, ObjectId as TObjectId} from 'mongoose';
+import {SITEACCT_NAME} from './siteacct';
 import {USER_NAME} from './user';
 
 export const ORG_NAME = 'Org';
 
 const ObjectId = Schema.Types.ObjectId;
 
-const schema = new Schema({
-  saId: {type: ObjectId, ref: SITE_ACCT_NAME, required: true},
-  name: {type: String, required: true},
+export interface Org extends mongoose.Document {
+  saId: TObjectId;
+  name: String;
+  uId: TObjectId;
+  note?: String;
+  users: [{
+    id: TObjectId;
+    roles: [{
+      id: Number;
+      uId: TObjectId;
+      at: Date;
+    }];
+  }];
+  funds: [{
+    id: Number;
+    name: String;
+    begAt?: Date;
+    uId: TObjectId;
+    at: Date;
+    note?: String;
+    suss: [{
+      begAt: Date;
+      bUId: TObjectId;
+      endAt?: Date;
+      eUId?: TObjectId;
+      note?: String;
+    }];
+  }];
+  closes: [{
+    id: Number;
+    endAt: Date;
+    uId: TObjectId;
+    at: Date;
+    note?: String;
+  }];
+  readonly at: Date;
+  readonly upAt: Date;
+};
+
+const schema = new Schema<Org, mongoose.Model<Org>>({
+  saId: {type: ObjectId, ref: SITEACCT_NAME, required: true},
+  name: {type: String, required: true, trim: true},
   uId: {type: ObjectId, ref: USER_NAME, required: true},
-  note: String,
+  note: {type: String, trim: true},
   users: [{
     id: {type: ObjectId, ref: USER_NAME, required: true},
     roles: [{
@@ -21,17 +60,17 @@ const schema = new Schema({
   }],
   funds: [{
     id: {type: Number, required: true},
-    name: {type: String, required: true},
+    name: {type: String, required: true, trim: true},
     begAt: {type: Date, required: true},
     uId: {type: ObjectId, ref: USER_NAME, required: true},
     at: {type: Date, required: true},
-    note: String,
+    note: {type: String, trim: true},
     suss: [{
       begAt: {type: Date, required: true},
       bUId: {type: ObjectId, ref: USER_NAME, required: true},
       endAt: Date,
       eUId: {type: ObjectId, ref: USER_NAME},
-      note: String
+      note: {type: String, trim: true}
     }]
   }],
   closes: [{
@@ -39,7 +78,7 @@ const schema = new Schema({
     endAt: {type: Date, required: true},
     uId: {type: ObjectId, ref: USER_NAME, required: true},
     at: {type: Date, required: true},
-    note: String
+    note: {type: String, trim: true}
   }]
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 
@@ -47,4 +86,4 @@ schema
   .index({saId: 1, name: 1}, {unique: true, collation: {locale: 'en', strength: 1}})
   .index({'users.id': 1});
 
-export default mongoose.model(ORG_NAME, schema);
+export const orgModel = mongoose.model(ORG_NAME, schema);

@@ -1,20 +1,25 @@
 import express, {Request, Response, NextFunction} from 'express';
 import createError from 'http-errors';
 import path from 'path';
-import cookieParser from 'cookie-parser';
-import logger, {loggerMiddleware} from './utils/logger';
+import logger, {loggerMiddleware} from './controllers/logger';
 import mongoose from 'mongoose';
 import {AppError, ServerError, NotFound} from './controllers/errors';
 import indexRouter from './routes/index';
 import usersRouter from './routes/users';
+import orgsRouter from './routes/orgs';
 import accountsRouter from './routes/accounts';
+import sessionsRouter from './routes/sessions';
 import cors from 'cors';
+import { sessionMiddleware } from './controllers/session';
 
 const app = express();
+
+const pathPrefix = '/api/v1/'
 
 // view engine setup TODO needed?????
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
+app.enable('trust proxy');
 
 app.use(loggerMiddleware);
 
@@ -22,13 +27,18 @@ if (process.env.NODE_ENV !== 'production') app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(sessionMiddleware(pathPrefix));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const prefix = '/api/v1/'
-app.use(prefix, indexRouter);
-app.use(prefix + 'users', usersRouter);
-app.use(prefix + 'accounts', accountsRouter);
+app.get('/', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'))
+});
+
+app.use(pathPrefix, indexRouter);
+app.use(pathPrefix + 'sessions', sessionsRouter);
+app.use(pathPrefix + 'users', usersRouter);
+app.use(pathPrefix + 'orgs', orgsRouter);
+app.use(pathPrefix + 'accounts', accountsRouter);
 
 // default: 'no api' 404 and forward to error handler
 app.use((req, res, next) => next(new NotFound(req.path)));

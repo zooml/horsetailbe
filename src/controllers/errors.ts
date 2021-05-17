@@ -1,4 +1,4 @@
-import {logError, logWarn} from '../utils/logger';
+import {logError, logWarn} from './logger';
 
 export class AppError extends Error {
   statusCode: number;
@@ -30,11 +30,13 @@ export class UserError extends AppError {
 
 const formatValue = (v: any): string => `${typeof(v) == 'string' ? '"' + v + '"' : v}`;
 
-export const CAST_ERROR = 100;
-export const REF_ERROR = 101;
-export const DEPENDENT_ERROR = 102;
-export const VALUE_ERROR = 103;
-export const DUP_ERROR = 104;
+export const CAST_ERROR = 1100;
+export const REF_ERROR = 1101;
+export const DEPENDENT_ERROR = 1102;
+export const VALUE_ERROR = 1103;
+export const DUP_ERROR = 1104;
+export const MISSING_ERROR = 1105;
+export const MAX_ERROR = 1106;
 
 export class BadRequest extends UserError {
   constructor(path: string, reason: string, code: number) {
@@ -53,7 +55,10 @@ export class RefError extends BadRequest {
 }
 export class DependentError extends BadRequest {
   constructor(path: string, other: string, xor?: boolean) {
-    super(path, `${xor ? 'cannot' : 'must'} be set if ${other} is set}`, DEPENDENT_ERROR);
+    super(
+      path, 
+      xor ? `or ${other} must be set but not both` : `must be set if ${other} is set`,
+      DEPENDENT_ERROR);
   }
 }
 export class ValueError extends BadRequest {
@@ -66,13 +71,53 @@ export class DupError extends BadRequest {
     super(path, `value ${formatValue(value)} is not unique`, DUP_ERROR);
   }
 }
+export class MissingError extends BadRequest {
+  constructor(path: string) {
+    super(path, 'is missing', MISSING_ERROR);
+  }
+}
+export class MaxError extends BadRequest {
+  constructor(path: string, max: number) {
+    super(path, `exceeds max length of ${max}`, MAX_ERROR);
+  }
+}
 
-const formatPath = (path: string): string => path.length <= 1 ? '(root)' : path;
+export const CREDENTIALS_ERROR = 1200;
+export const MISSING_OR_UNKN_SESSION = 1201;
+export const SESSION_IP_MISMATCH = 1202;
+export const SESSION_EXPIRED = 1203;
+export class AuthnError extends UserError {
+  constructor(message: string, code: number) {
+    super(message, 401, code);
+  }
+}
+export class CredentialsError extends AuthnError {
+  constructor() {
+    super('email or password not recognized', CREDENTIALS_ERROR);
+  }
+}
+export class MissingOrUnknSession extends AuthnError {
+  constructor() {
+    super('missing or unknown session cookie', MISSING_OR_UNKN_SESSION);
+  }
+}
+export class SessionIpMismatch extends AuthnError {
+  constructor() {
+    super('session ip mismatch', SESSION_IP_MISMATCH);
+  }
+}
+export class SessionExpired extends AuthnError {
+  constructor() {
+    super('session expired', SESSION_EXPIRED);
+  }
+}
 
-export const NOT_FOUND = 200;
+const formatUrlPath = (path: string): string => path.length <= 1 ? '(root)' : path;
+
+export const NOT_FOUND = 1300;
 export class NotFound extends UserError {
   constructor(path: string) {
-    super(`path ${formatPath(path)} not found`, 404, NOT_FOUND);
+    super(`path ${formatUrlPath(path)} not found`, 404, NOT_FOUND);
   }
 }
 
