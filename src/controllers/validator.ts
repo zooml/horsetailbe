@@ -7,5 +7,5 @@ export default (o: {[key: string]: any}) => {
   if (o.email && !emailRegex.test(o.email.toString())) throw new ValueError('email', o.email, 'invalid format');
   if (o.note && limits.fields.note.max < o.note.length) throw new MaxError('note', limits.fields.note.max);  
 
-  // TODO name, fName, lName
+  // TODO name, fName, lName, email len
 };

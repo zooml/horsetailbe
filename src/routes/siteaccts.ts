@@ -35,3 +35,5 @@ router.post('/', modelRoute(async (req: Request, res: Response) => {
   res.send(fromDoc(resDoc));
   logRes(res);
 }));
+
+export default router;

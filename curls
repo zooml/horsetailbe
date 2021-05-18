@@ -1,0 +1,6 @@
+#!/bin/bash
+
+curl -i -X POST -H 'Content-Type: application/json' -d '{"fName":"greg","email":"greg.denton@gmail.com","pswd":"woowoo"}' localhost:5000/api/v1/users
+
+curl -i -X POST -H 'Content-Type: application/json' -d '{"email":"greg.denton@gmail.com","pswd":"woowoo"}' localhost:5000/api/v1/sessions
+

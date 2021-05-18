@@ -4,10 +4,10 @@ import cookieParser from 'cookie-parser';
 import limits from './limits';
 
 const createCookie = (req: Request, uId: string) =>
-  btoa(`${uId};${req.ip};${Date.now() + limits.session.maxAge * 1000}`);
+  Buffer.from(`${uId};${req.ip};${Date.now() + limits.session.maxAge * 1000}`, 'ascii').toString('base64');
 
 const parseCookie = (cookie: string) => {
-  const a = atob(cookie).split(';');
+  const a = Buffer.from(cookie, 'base64').toString('ascii').split(';');
   if (a.length !== 3) throw new MissingOrUnknSession();
   const exp = Number.parseInt(a[2]);
   if (!a[0] || !a[1] || Number.isNaN(exp)) throw new MissingOrUnknSession();

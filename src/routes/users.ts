@@ -7,6 +7,7 @@ import { MissingError, CredentialsError } from '../controllers/errors';
 import bcrypt from 'bcrypt';
 import { sessionClear } from '../controllers/session';
 import validator from '../controllers/validator';
+import { NotFound } from '../controllers/errors';
 
 const router = express.Router();
 
@@ -21,13 +22,13 @@ const encryptPswd = async (pswd: string) => {
 
 export const authnUser = async (email: string, pswd: string): Promise<User> => {
   const user = await userModel.findOne({email});
-  if (!await bcrypt.compare(pswd, user.ePswd.valueOf())) throw new CredentialsError();
+  if (!user || !await bcrypt.compare(pswd, user.ePswd.valueOf())) throw new CredentialsError();
   return user;
 };
 
 const toDoc = async (o: {[key: string]: any}) => new userModel({
   email: trimOrUndef(o.email)?.toLowerCase(),
-  ePswd: encryptPswd(o.pswd),
+  ePswd: await encryptPswd(o.pswd),
   fName: trimOrUndef(o.fName),
   lName: trimOrUndef(o.lName),
   isAct: true,
@@ -51,8 +52,9 @@ const validate = (o: User) => {
   // TODO name, ....
 };
 
-router.get('/:email', modelRoute(async (req: Request, res: Response) => {
-  const resDoc = await userModel.findOne({email: req.params.email});
+router.get('/', modelRoute(async (req: Request, res: Response) => {
+  const resDoc = await userModel.findOne({email: req.query.email.toString()});
+  if (!resDoc) throw new NotFound(req.path); // TODO msg path is '/60a279e3336b3611bb41512f'
   res.send(fromDoc(resDoc));
 }));
 
