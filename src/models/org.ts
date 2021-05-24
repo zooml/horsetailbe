@@ -6,6 +6,10 @@ export const ORG_NAME = 'Org';
 
 const ObjectId = Schema.Types.ObjectId;
 
+export const orgRoles = Object.freeze({
+  ADMIN: 1
+});
+
 export interface Org extends mongoose.Document {
   saId: TObjectId;
   name: String;

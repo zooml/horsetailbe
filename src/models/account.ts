@@ -1,4 +1,5 @@
 import mongoose, {Schema, ObjectId as TObjectId} from 'mongoose';
+import { Basedoc } from './basedoc';
 import {ORG_NAME} from './org';
 import {USER_NAME} from './user';
 
@@ -7,21 +8,22 @@ export const ACCOUNT_NAME = 'Account';
 const ObjectId = Schema.Types.ObjectId;
 
 export type Category = {
-  id: number,
-  isCr: boolean
+  id: number;
+  tag: string;
+  isCr: boolean;
 };
 
-export const CatsByName: {[key: string]: Category} = Object.freeze({
-  ASSET: {id: 1, name: 'asset', isCr: false},
-  LIABILITY: {id: 2, name: 'liability', isCr: true},
-  EQUITY: {id: 3, name: 'equity', isCr: true},
-  INCOME: {id: 4, name: 'income', isCr: true},
-  EXPENSE: {id: 5, name: 'expense', isCr: false}
+export const catByTag: {[key: string]: Category} = Object.freeze({
+  ASSET: {id: 1, tag: 'asset', isCr: false},
+  LIABILITY: {id: 2, tag: 'liability', isCr: true},
+  EQUITY: {id: 3, tag: 'equity', isCr: true},
+  INCOME: {id: 4, tag: 'income', isCr: true},
+  EXPENSE: {id: 5, tag: 'expense', isCr: false}
 });
 
-export const findCatById = (id: number): Category | undefined => {
-  for (const name in CatsByName) {
-    const cat = CatsByName[name];
+export const catById = (id: number): Category | undefined => {
+  for (const name in catByTag) {
+    const cat = catByTag[name];
     if (cat.id === id) {
       return cat;
     }
@@ -29,7 +31,7 @@ export const findCatById = (id: number): Category | undefined => {
   return undefined;
 }
 
-export interface Account extends mongoose.Document {
+export interface Account extends mongoose.Document, Basedoc {
   readonly oId: TObjectId;
   readonly uId: TObjectId;
   num: Number;
@@ -50,9 +52,7 @@ export interface Account extends mongoose.Document {
     endAt?: Date;
     eUId?: TObjectId;
     note?: String;
-  }],
-  readonly at: Date;
-  readonly upAt: Date;
+  }]
 };
 
 const schema = new Schema<Account, mongoose.Model<Account>>({

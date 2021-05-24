@@ -86,6 +86,7 @@ export const CREDENTIALS_ERROR = 1200;
 export const MISSING_OR_UNKN_SESSION = 1201;
 export const SESSION_IP_MISMATCH = 1202;
 export const SESSION_EXPIRED = 1203;
+export const USER_NOT_ACTIVE = 1204;
 export class AuthnError extends UserError {
   constructor(message: string, code: number) {
     super(message, 401, code);
@@ -109,6 +110,11 @@ export class SessionIpMismatch extends AuthnError {
 export class SessionExpired extends AuthnError {
   constructor() {
     super('session expired', SESSION_EXPIRED);
+  }
+}
+export class UserNotActive extends AuthnError {
+  constructor() {
+    super('user not active', USER_NOT_ACTIVE);
   }
 }
 

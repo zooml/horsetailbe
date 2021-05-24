@@ -44,7 +44,7 @@ export const loggerMiddleware = [
     const rlog = logger.child({rId});
     let baseUrl = req.baseUrl;
     if (!baseUrl || baseUrl === '/') baseUrl = '';
-    rlog.info({method: req.method, path: `${baseUrl}${req.path}`, params: req.params}); // TODO size
+    logInfo({method: req.method, path: `${baseUrl}${req.path}`, params: req.params, ip: req.ip});
     res.locals.logger = rlog;
     res.locals.date = Date.now();
     res.set('X-Request-Id', `${rId}`);

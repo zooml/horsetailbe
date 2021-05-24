@@ -1,17 +1,29 @@
-import mongoose, {Schema} from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
+import { Basedoc } from './basedoc';
 
 export const USER_NAME = 'User';
 
-export interface User extends mongoose.Document {
-  email: String,
-  ePswd: String,
-  fName: String,
-  lName?: String,
-  isAct: Boolean,
-  opts: {[key: string]: any},
-  note?: String,
-  readonly at: Date,
-  readonly upAt: Date
+export type UserState = {
+  id: number,
+  tag: string
+};
+
+export const userStates: {[key: string]: UserState} = Object.freeze({
+  SIGNED_UP: {id: 1, tag: 'signedup'},
+  WAIT_CONF: {id: 2, tag: 'waitconf'},
+  ACTIVE: {id: 3, tag: 'active'},
+  SUSPENDED: {id: 4, tag: 'suspended'},
+  DELETED: {id: 5, tag: 'deleted'},
+});
+
+export interface User extends mongoose.Document, Basedoc {
+  email: String;
+  ePswd: String;
+  fName: String;
+  lName?: String;
+  st: Number;
+  opts: {};
+  note?: String;
 };
 
 const schema = new Schema<User, mongoose.Model<User>>({
@@ -19,7 +31,7 @@ const schema = new Schema<User, mongoose.Model<User>>({
   ePswd: {type: String, required: true, trim: true},
   fName: {type: String, required: true, trim: true},
   lName: {type: String, trim: true},
-  isAct: {type: Boolean, required: true},
+  st: {type: Number, required: true},
   opts: {},
   note: {type: String, trim: true}
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});

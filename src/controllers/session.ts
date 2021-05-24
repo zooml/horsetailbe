@@ -23,7 +23,7 @@ const validateCookie = (req: Request): string => {
   if (!value) throw new MissingOrUnknSession();
   const ses = parseCookie(value);
   if (ses.ip !== req.ip) throw new SessionIpMismatch();
-  if (ses.exp < Date.now()) throw new SessionExpired();
+  if (ses.exp < Date.now()) throw new SessionExpired(); // TODO refresh if within 90% of expiration
   return ses.uId;
 };
 

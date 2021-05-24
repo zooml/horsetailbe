@@ -1,7 +1,7 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
 import {DependentError, DupError, RefError, ValueError} from '../controllers/errors';
-import {Account, accountModel, findCatById} from '../models/account';
+import {Account, accountModel, catById} from '../models/account';
 import {trimOrUndef} from '../utils/util';
 import {logRes} from '../controllers/logger';
 
@@ -84,7 +84,7 @@ const validate = async (o: Account) => {
     if (!parent) throw new RefError('paId', 'account', o.paId);
     validateNum(o.num.valueOf(), parent.num.valueOf());
   } else { // general account
-    const cat = findCatById(o.catId?.valueOf()); // o.catId is defined
+    const cat = catById(o.catId?.valueOf()); // o.catId is defined
     if (!cat) throw new RefError('catId', 'category', o.catId);
     if (await accountModel.exists({oId: o.oId, catId: o.catId})) throw new DupError('catId', o.catId);
     if (o.isCr !== undefined && o.isCr.valueOf() !== cat.isCr) throw new ValueError('isCr', o.isCr, 'must be same as category or not set');

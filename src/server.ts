@@ -1,6 +1,6 @@
 import app from './app';
 import http from 'http';
-import logger from './controllers/logger';
+import logger, { logInfo } from './controllers/logger';
 import requestStats from 'request-stats';
 
 const normalizePort = (val: any) => {
@@ -41,6 +41,7 @@ server.on('listening', () => {
   const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   logger.info('listening on ' + bind);
 });
-requestStats(server).on('complete', (stats: {[key: string]: any}) => {}); // TODO https://www.npmjs.com/package/request-stats
+requestStats(server).on('complete', (o: requestStats.Stats) => 
+  logInfo({status: o.res.status, ms: o.time, reqSz: o.req.bytes, resSz: o.res.bytes}));
 
 export default server;

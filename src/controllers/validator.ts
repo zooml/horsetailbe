@@ -1,6 +1,7 @@
 import { MaxError, ValueError } from './errors';
 import limits from './limits';
 
+// WARN in client
 const emailRegex = /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/;
 
 export default (o: {[key: string]: any}) => {
