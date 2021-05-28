@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
-import { Basedoc } from './basedoc';
+import { BaseDoc } from './basedoc';
 
-export const USER_NAME = 'User';
+export const NAME = 'User';
 
 export type UserState = {
   id: number,
@@ -16,26 +16,30 @@ export const userStates: {[key: string]: UserState} = Object.freeze({
   DELETED: {id: 5, tag: 'deleted'},
 });
 
-export interface User extends mongoose.Document, Basedoc {
-  email: String;
-  ePswd: String;
-  fName: String;
-  lName?: String;
-  st: Number;
+export interface Doc extends mongoose.Document, BaseDoc {
+  email: string;
+  ePswd: string;
+  fName: string;
+  lName?: string;
+  st: number;
   opts: {};
-  note?: String;
+  note?: string;
 };
 
-const schema = new Schema<User, mongoose.Model<User>>({
+const schema = new Schema<Doc, mongoose.Model<Doc>>({
   email: {type: String, required: true, trim: true},
   ePswd: {type: String, required: true, trim: true},
   fName: {type: String, required: true, trim: true},
   lName: {type: String, trim: true},
   st: {type: Number, required: true},
   opts: {},
-  note: {type: String, trim: true}
+  desc: { // must be Desc
+    note: {type: String, trim: true},
+    id: {type: String, trim: true},
+    url: {type: String, trim: true}
+  }
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 
 schema.index({email: 1}, {unique: true});
 
-export const userModel = mongoose.model(USER_NAME, schema);
+export const Model = mongoose.model(NAME, schema);

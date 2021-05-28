@@ -12,7 +12,10 @@
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}/dist/server.js",
-      "outputCapture": "std"
+      "outputCapture": "std",
+      "env": {
+        "NODE_ENV": "dev"
+      }
     }
   ]
 }

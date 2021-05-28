@@ -1,8 +1,12 @@
 import {Request, Response, NextFunction} from 'express';
-import { MissingOrUnknSession, SessionExpired, SessionIpMismatch } from './errors';
+import { MissingOrUnknSession, SessionExpired, SessionIpMismatch } from '../controllers/errors';
 import cookieParser from 'cookie-parser';
-import limits from './limits';
+import limits from '../controllers/limits';
+import { isPathSeg } from '../utils/util';
+import { SEGMENT as SESSIONS_SEG } from './sessions';
+import { SEGMENT as USERS_SEG } from './users';
 
+// TODO SECURITY encrypt/decrypt
 const createCookie = (req: Request, uId: string) =>
   Buffer.from(`${uId};${req.ip};${Date.now() + limits.session.maxAge * 1000}`, 'ascii').toString('base64');
 
@@ -30,13 +34,12 @@ const validateCookie = (req: Request): string => {
 export const sessionMiddleware = (pathPrefix: string) => [
   cookieParser(limits.digest.keys),
   (req: Request, res: Response, next: NextFunction) => {
-    if (!(req.method === 'HEAD'
-      || req.method === 'OPTIONS'
-      || (req.path.startsWith(pathPrefix)
-        && (req.path.endsWith('sessions')
-          || (req.path.endsWith('users') && req.method === 'POST'))))) {
-      const uId = validateCookie(req);
-      res.locals.uId = uId;
+    if (req.method !== 'HEAD' && req.method !== 'OPTIONS') {
+      const iRsc = isPathSeg(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);
+      if (!iRsc || (iRsc === 2 && req.method !== 'POST')) {
+        const uId = validateCookie(req);
+        res.locals.uId = uId;
+      }
     }
     next();
   }

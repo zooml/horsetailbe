@@ -1,44 +1,47 @@
-import mongoose, {Schema, ObjectId as TObjectId} from 'mongoose';
-import {ORG_NAME} from './org';
-import {USER_NAME} from './user';
-import {ACCOUNT_NAME} from './account';
+import mongoose, { Schema, ObjectId } from 'mongoose';
+import { NAME as ORG_NAME } from './org';
+import { NAME as USER_NAME } from './user';
+import { NAME as ACCOUNT_NAME } from './account';
+import { BaseDoc } from './basedoc';
 
-export const TXNDOC_NAME = 'TxnDoc';
+export const NAME = 'TxnDoc';
 
-const ObjectId = Schema.Types.ObjectId;
+const SObjectId = Schema.Types.ObjectId;
 
-export interface Txndoc extends mongoose.Document {
-  oId: TObjectId;
-  ts: String;
-  uId: TObjectId;
-  kind: String;
+export interface Doc extends mongoose.Document, BaseDoc {
+  oId: ObjectId;
+  ts: string;
+  uId: ObjectId;
+  kind: string;
   entAt?: Date;
   amts: [{
-    acId: TObjectId;
-    fund: Number;
-    amt: Number;
-    note?: String;
+    acId: ObjectId;
+    fund: number;
+    amt: number;
+    note?: string;
   }],
-  refId?: String;
-  note?: String;
-  readonly at: Date;
-  readonly upAt: Date;
+  dueAt?: Date;
+  refId?: string;
+  note?: string;
 };
 
-const schema = new Schema<Txndoc, mongoose.Model<Txndoc>>({
-  oId: {type: ObjectId, ref: ORG_NAME, required: true},
+const schema = new Schema<Doc, mongoose.Model<Doc>>({
+  oId: {type: SObjectId, ref: ORG_NAME, required: true},
   ts: {type: String, required: true, trim: true}, // timestamp, e.g. 20210324231845012-s8v3x
-  uId: {type: ObjectId, ref: USER_NAME, required: true},
+  uId: {type: SObjectId, ref: USER_NAME, required: true},
   kind: {type: String, required: true, trim: true}, // TODO
   entAt: Date, // entry date (use at if undef)
   amts: [{
-    acId: {type: ObjectId, ref: ACCOUNT_NAME, required: true},
+    acId: {type: SObjectId, ref: ACCOUNT_NAME, required: true},
     fund: {type: Number, required: true},
     amt: {type: Number, required: true},
     note: {type: String, trim: true}
   }],
-  refId: {type: String, trim: true},
-  note: {type: String, trim: true},
+  desc: { // must be Desc
+    note: {type: String, trim: true},
+    id: {type: String, trim: true},
+    url: {type: String, trim: true}
+  }
   // img: { // https://www.geeksforgeeks.org/upload-and-retrieve-image-on-mongodb-using-mongoose/
   //   ct: String, // content type
   //   data: Buffer
@@ -49,4 +52,4 @@ schema
   .index({oId: 1, ts: 1}, {unique: true})
   .index({oId: 1, 'amts.acId': 1});
 
-export const txndocModel = mongoose.model(TXNDOC_NAME, schema);
+export const Model = mongoose.model(NAME, schema);

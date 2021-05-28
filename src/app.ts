@@ -4,13 +4,14 @@ import path from 'path';
 import logger, {loggerMiddleware} from './controllers/logger';
 import mongoose from 'mongoose';
 import {AppError, ServerError, NotFound} from './controllers/errors';
-import usersRouter from './routes/users';
-import orgsRouter from './routes/orgs';
-import accountsRouter from './routes/accounts';
-import sessionsRouter from './routes/sessions';
-import siteacctRouter from './routes/siteaccts';
+import * as users from './routes/users';
+import * as orgs from './routes/orgs';
+import * as accounts from './routes/accounts';
+import * as sessions from './routes/sessions';
+import * as siteaccts from './routes/siteaccts';
 import cors from 'cors';
-import { sessionMiddleware } from './controllers/session';
+import { sessionMiddleware } from './routes/session';
+import { authzMiddleware } from './routes/authz';
 
 const app = express();
 
@@ -34,11 +35,12 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use(sessionMiddleware(pathPrefix));
-app.use(pathPrefix + 'sessions', sessionsRouter);
-app.use(pathPrefix + 'users', usersRouter);
-app.use(pathPrefix + 'siteacct', siteacctRouter);
-app.use(pathPrefix + 'orgs', orgsRouter);
-app.use(pathPrefix + 'accounts', accountsRouter);
+app.use(authzMiddleware(pathPrefix));
+app.use(pathPrefix + sessions.SEGMENT, sessions.router);
+app.use(pathPrefix + users.SEGMENT, users.router);
+app.use(pathPrefix + siteaccts.SEGMENT, siteaccts.router);
+app.use(pathPrefix + orgs.SEGMENT, orgs.router);
+app.use(pathPrefix + accounts.SEGMENT, accounts.router);
 
 // default: 'no api' 404 and forward to error handler
 app.use((req, res, next) => next(new NotFound(req.path)));

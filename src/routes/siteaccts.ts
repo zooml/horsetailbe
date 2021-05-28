@@ -1,39 +1,40 @@
-import express, {Request, Response} from 'express';
-import {trimOrUndef} from '../utils/util';
+import express, { Request, Response } from 'express';
+import { trimOrUndef } from '../utils/util';
 import modelRoute from '../controllers/modelroute';
-import {Siteacct, siteacctModel} from '../models/siteacct';
-import {logRes} from '../controllers/logger';
+import { Doc, Model } from '../models/siteacct';
+import * as desc from './desc';
+import { toOId } from '../models/basedoc';
 
-const toDoc = (o: {[key: string]: any}, uId: string): Siteacct => new siteacctModel({
-  uId,
+export const SEGMENT = 'siteaccts';
+export const router = express.Router();
+
+const toDoc = (o: {[key: string]: any}, uId: string): Doc => new Model({
   name: trimOrUndef(o.name),
-  note: trimOrUndef(o.note)
+  desc: desc.toDoc(o.desc, uId)
 });
 
-const fromDoc = (o: Siteacct) => ({
-  uId: o.uId,
-  oIds: o.oIds,
+const fromDoc = (o: Doc) => ({
   name: o.name,
-  note: o.note
+  desc: o.desc
 });
 
-const validate = (o: Siteacct) => {
+const validate = (o: Doc) => {
   // TODO saId, uId
   // TODO limit on num orgs/user
 };
 
-const router = express.Router();
+export const create = async (uId: string) => await new Model({uId}).save();
+
+export const findByUser = async (uId: string) => await Model.findOne({uId: toOId(uId)});
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
   // TODO get by uId
 }));
 
-router.post('/', modelRoute(async (req: Request, res: Response) => {
-  const reqDoc = toDoc(req.body, res.locals.uId);
-  validate(reqDoc);
-  const resDoc =  await reqDoc.save();
-  res.send(fromDoc(resDoc));
-  logRes(res);
-}));
-
-export default router;
+// TODO needed??? router.post('/', modelRoute(async (req: Request, res: Response) => {
+//   const reqDoc = toDoc(req.body, res.locals.uId);
+//   validate(reqDoc);
+//   const resDoc =  await reqDoc.save();
+//   res.send(fromDoc(resDoc));
+//   logRes(res);
+// }));

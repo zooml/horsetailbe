@@ -15,8 +15,8 @@ export class AppError extends Error {
 export const SERVER_ERROR = 1;
 export class ServerError extends AppError {
   constructor(err?: any) {
-    super('internal server error', 500, exports.SERVER_ERROR);
-    logError(`server error: ${err?.message ? err.message: 'unknown'}`);
+    super('internal server error', 500, SERVER_ERROR);
+    logError(`server error: ${err?.message ? err.message : 'unknown'}`);
     // TODO log stack trace?
   }
 }
@@ -30,13 +30,13 @@ export class UserError extends AppError {
 
 const formatValue = (v: any): string => `${typeof(v) == 'string' ? '"' + v + '"' : v}`;
 
-export const CAST_ERROR = 1100;
-export const REF_ERROR = 1101;
-export const DEPENDENT_ERROR = 1102;
-export const VALUE_ERROR = 1103;
-export const DUP_ERROR = 1104;
-export const MISSING_ERROR = 1105;
-export const MAX_ERROR = 1106;
+export const CAST_ERROR = 1101;
+export const REF_ERROR = 1102;
+export const DEPENDENT_ERROR = 1103;
+export const VALUE_ERROR = 1104;
+export const DUP_ERROR = 1105;
+export const MISSING_ERROR = 1106;
+export const MAX_ERROR = 1107;
 
 export class BadRequest extends UserError {
   constructor(path: string, reason: string, code: number) {
@@ -44,8 +44,8 @@ export class BadRequest extends UserError {
   }
 }
 export class CastError extends BadRequest {
-  constructor(path: string, value: any) {
-    super(path, `value ${formatValue(value)} not correct type`, CAST_ERROR);
+  constructor(path: string, value?: any) {
+    super(path, `value ${value? formatValue(value) : ''} not correct type`, CAST_ERROR);
   }
 }
 export class RefError extends BadRequest {
@@ -82,11 +82,11 @@ export class MaxError extends BadRequest {
   }
 }
 
-export const CREDENTIALS_ERROR = 1200;
-export const MISSING_OR_UNKN_SESSION = 1201;
-export const SESSION_IP_MISMATCH = 1202;
-export const SESSION_EXPIRED = 1203;
-export const USER_NOT_ACTIVE = 1204;
+export const CREDENTIALS_ERROR = 1201;
+export const MISSING_OR_UNKN_SESSION = 1202;
+export const SESSION_IP_MISMATCH = 1203;
+export const SESSION_EXPIRED = 1204;
+export const USER_NOT_ACTIVE = 1205;
 export class AuthnError extends UserError {
   constructor(message: string, code: number) {
     super(message, 401, code);
@@ -120,10 +120,21 @@ export class UserNotActive extends AuthnError {
 
 const formatUrlPath = (path: string): string => path.length <= 1 ? '(root)' : path;
 
-export const NOT_FOUND = 1300;
+export const NOT_FOUND = 1301;
 export class NotFound extends UserError {
   constructor(path: string) {
     super(`path ${formatUrlPath(path)} not found`, 404, NOT_FOUND);
   }
 }
 
+export const ORG_DENIED = 9001;
+export class ForbiddenError extends UserError {
+  constructor(message: string, code: number) {
+    super(message, 403, code);
+  }
+}
+export class OrgDenied extends ForbiddenError {
+  constructor() {
+    super('user request to organization denied', ORG_DENIED);
+  }
+}

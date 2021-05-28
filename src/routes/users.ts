@@ -1,14 +1,16 @@
 import express, {Request, Response} from 'express';
 import { trimOrUndef } from '../utils/util';
 import modelRoute from '../controllers/modelroute';
-import { User, userModel, userStates } from '../models/user';
+import { Doc, Model, userStates } from '../models/user';
 import {logRes} from '../controllers/logger';
 import { MissingError, CredentialsError, ServerError, UserNotActive } from '../controllers/errors';
 import bcrypt from 'bcrypt';
-import { sessionClear } from '../controllers/session';
+import { sessionClear } from './session';
 import validator from '../controllers/validator';
+import { create as createSiteacct } from './siteaccts';
 
-const router = express.Router();
+export const SEGMENT = 'users';
+export const router = express.Router();
 
 const salts = 10;
 
@@ -19,14 +21,16 @@ const encryptPswd = async (pswd: string) => {
   return await bcrypt.hash(pswd, salts); // salt is in hash
 }
 
-export const authnUser = async (email: string, pswd: string): Promise<User> => {
-  const user = await userModel.findOne({email});
-  if (!user || !await bcrypt.compare(pswd, user.ePswd.valueOf())) throw new CredentialsError();
+const validatePswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
+
+export const authnUser = async (email: string, pswd: string): Promise<Doc> => {
+  const user = await Model.findOne({email});
+  if (!user || !await validatePswd(pswd, user.ePswd)) throw new CredentialsError();
   if (user.st !== userStates.ACTIVE.id) throw new UserNotActive();
   return user;
 };
 
-const toDoc = async (o: {[key: string]: any}) => new userModel({
+const toDoc = async (o: {[key: string]: any}) => new Model({
   email: trimOrUndef(o.email)?.toLowerCase(),
   ePswd: await encryptPswd(o.pswd),
   fName: trimOrUndef(o.fName),
@@ -35,7 +39,7 @@ const toDoc = async (o: {[key: string]: any}) => new userModel({
   note: trimOrUndef(o.note)
 });
 
-const fromDoc = (o: User) => ({
+const fromDoc = (o: Doc) => ({
   id: o._id,
   email: o.email,
   fName: o.fName,
@@ -47,14 +51,14 @@ const fromDoc = (o: User) => ({
   v: o.__v
 });
 
-const validate = (o: User) => {
+const validate = (o: Doc) => {
   validator(o);
   // TODO name, ....
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
   if (req.query.ses) {
-    const resDoc = await userModel.findById(res.locals.uId);
+    const resDoc = await Model.findById(res.locals.uId);
     if (!resDoc) throw new ServerError({message: `session valid but no user ${res.locals.uId}`})
     res.send([fromDoc(resDoc)]);
   } else {
@@ -66,9 +70,8 @@ router.post('/', modelRoute(async (req: Request, res: Response) => {
   const reqDoc = await toDoc(req.body);
   validate(reqDoc);
   const resDoc =  await reqDoc.save();
+  createSiteacct(resDoc._id);
   sessionClear(res)
     .send(fromDoc(resDoc));
   logRes(res);
 }));
-
-export default router;

@@ -19,3 +19,35 @@ const digest = (s: string): string => {
   algo.update(s);
   return algo.digest('base64');
 }
+
+const normalizePrefix = (prefix: string): string => {
+  let p = prefix;
+  if (!p || p === '/') return '/';
+  if (p.charAt(0) !== '/') p = `/${p}`;
+  return (p.charAt(p.length - 1) === '/') ? p : `${p}/`;
+};
+
+export const extractSeg = (prefix: string, path: string) =>{
+  const pre = normalizePrefix(prefix);
+  if (path.startsWith(pre)) {
+    const rem = path.substring(pre.length);
+    if (rem) {
+      return rem.split('/', 2)[0];
+    }
+  }
+  return '';
+}
+
+export const isPathSeg = (prefix: string, path: string, ...segs: string[]): number => {
+  const seg = extractSeg(prefix, path);
+  for (let i = 0; i < segs.length; ++i) {
+    if (segs[i] === seg) return i + 1;
+  }
+  return 0;
+};
+
+export const tryCatch = async <T>(f: () => Promise<T>, x?: (e: Error) => void): Promise<T> => {
+  try {
+    return await f();
+  } catch (e) {if (x) x(e);}
+};

@@ -1,35 +1,37 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
 import {DependentError, DupError, RefError, ValueError} from '../controllers/errors';
-import {Account, accountModel, catById} from '../models/account';
+import { Doc, Model, catById } from '../models/account';
 import {trimOrUndef} from '../utils/util';
 import {logRes} from '../controllers/logger';
+import * as desc from './desc';
 
-const toDoc = (o: {[key: string]: any}): Account => new accountModel({
-  oId: 'org', // TODO
-  uId: 'joe', // TODO
+export const SEGMENT = 'accounts';
+export const router = express.Router();
+
+const toDoc = (o: {[key: string]: any}, uId: string, oId: string): Doc => new Model({
+  oId,
   num: o.num,
   name: trimOrUndef(o.name),
   begAt: o.begAt,
-  note: trimOrUndef(o.note),
-  paId: trimOrUndef(o.paId),
+  desc: desc.toDoc(o.desc, uId),
+  sumId: trimOrUndef(o.sumId),
   catId: o.catId,
   isCr: o.isCr,
 });
 
-const fromDoc = (o: Account): {[key: string]: any} => ({
+const fromDoc = (o: Doc): {[key: string]: any} => ({
   id: o._id,
-  oId: 'org', // TODO
-  uId: 'joe', // TODO
+  oId: o.oId,
   num: o.num,
   name: o.name,
   begAt: o.begAt || o.at,
-  note: o.note,
-  paId: o.paId,
+  desc: o.desc,
+  sumId: o.sumId,
   catId: o.catId,
   isCr: o.isCr,
   closes: o.closes,
-  suss: o.suss,
+  actts: o.actts,
   at: o.at,
   upAt: o.upAt,
   v: o.__v
@@ -52,60 +54,60 @@ const digitsAndPower = (n: number): number[] => {
   return [digits, power];
 };
 
-const validateNum = async (num: number, paNum?: number) => {
+const validateNum = async (o: Doc, sumNum?: number) => {
+
+  const num = o.num;
   if (!num) throw new ValueError('num', num, 'cannot be zero');
   if (num % 1) throw new ValueError('num', num, 'cannot contain fraction');
   const [digits, power] = digitsAndPower(num);
-  if (paNum !== undefined) {
-    if (num < paNum) new ValueError('num', num, `must be greater than parent account ${paNum}`);
-    const [paDigits, paPower] = digitsAndPower(paNum);
+  if (sumNum !== undefined) {
+    if (num < sumNum) new ValueError('num', num, `must be greater than summary account ${sumNum}`);
+    const [paDigits, paPower] = digitsAndPower(sumNum);
     if (digits != paDigits) throw new ValueError('num', num, `should have ${paDigits} digits`)
-    const diff = num - paNum; // paNum must be a prefix
+    const diff = num - sumNum; // must be a prefix
     const [diffDigits,] = digitsAndPower(diff);
-    if (paPower < diffDigits) throw new ValueError('num', num, `should have parent account num ${paNum} as a prefix`)
+    if (paPower < diffDigits) throw new ValueError('num', num, `should have summary account num ${sumNum} as a prefix`)
   } else { // general account
     // read 1 general acct "num" only
     if (digits < 3) throw new ValueError('num', num, 'should be at least 3 digits');
     if (power + 1 < digits) throw new ValueError('num', num, 'should be single digit followed by zeros for general accounts');
-    const otherAcct = await accountModel.findOne({org: 'org'}, 'num').sort({catId: 1});
+    const otherAcct = await Model.findOne({oId: o.oId}, 'num').sort({catId: 1});
     if (otherAcct) {
-      const otherNum = otherAcct.num.valueOf();
+      const otherNum = otherAcct.num;
       const [otherDigits,] = digitsAndPower(otherNum);
       if (digits != otherDigits) throw new ValueError('num', num, `should have ${otherDigits}`)
     }
   }
 };
 
-const validate = async (o: Account) => {
-  if ((o.catId !== undefined && o.paId !== undefined) ||
-    (o.catId === undefined && o.paId === undefined)) throw new DependentError('paId', 'catId', true);
-  if (o.paId) {
-    const parent = await accountModel.findById(o.paId);
-    if (!parent) throw new RefError('paId', 'account', o.paId);
-    validateNum(o.num.valueOf(), parent.num.valueOf());
+const validate = async (o: Doc) => {
+  if ((o.catId !== undefined && o.sumId !== undefined) ||
+    (o.catId === undefined && o.sumId === undefined)) throw new DependentError('paId', 'catId', true);
+  if (o.sumId) {
+    const sum = await Model.findById(o.sumId);
+    if (!sum) throw new RefError('sumId', 'account', o.sumId);
+    validateNum(o, sum.num);
   } else { // general account
-    const cat = catById(o.catId?.valueOf()); // o.catId is defined
+    const cat = catById(o.catId); // o.catId is defined
     if (!cat) throw new RefError('catId', 'category', o.catId);
-    if (await accountModel.exists({oId: o.oId, catId: o.catId})) throw new DupError('catId', o.catId);
-    if (o.isCr !== undefined && o.isCr.valueOf() !== cat.isCr) throw new ValueError('isCr', o.isCr, 'must be same as category or not set');
+    if (await Model.exists({oId: o.oId, catId: o.catId})) throw new DupError('catId', o.catId);
+    if (o.isCr !== undefined && o.isCr !== cat.isCr) throw new ValueError('isCr', o.isCr, 'must be same as category or not set');
     delete o.isCr;
-    validateNum(o.num.valueOf());
+    validateNum(o);
   }
 
   // TODO begAt must be after the last close
 };
 
-const router = express.Router();
-
 router.get('/', modelRoute(async (req: Request, res: Response) => {
   // TODO page limit
-  const resDocs = await accountModel.find({org: 'org'}).sort({num: 1});
+  const resDocs = await Model.find({oId: res.locals.oId}).sort({num: 1});
   res.send(resDocs.map(fromDoc));
   logRes(res);
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
-  const reqDoc = toDoc(req.body);
+  const reqDoc = toDoc(req.body, res.locals.uId, res.locals.oId);
   await validate(reqDoc);
   const resDoc =  await reqDoc.save();
   res.send(fromDoc(resDoc));
@@ -116,5 +118,3 @@ router.patch('/:account_id', function(req: Request, res: Response) {
   res.send({id: req.params.account_id, name: 'Cash'});
   logRes(res);
 });
-
-export default router;

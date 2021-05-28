@@ -1,27 +1,30 @@
-import mongoose, {Schema, ObjectId as TObjectId} from 'mongoose';
-import {ORG_NAME} from './org';
-import {USER_NAME} from './user';
+import mongoose, { Schema, ObjectId } from 'mongoose';
+import { NAME as ORG_NAME } from './org';
+import { NAME as USER_NAME } from './user';
+import { BaseDoc, Desc } from './basedoc';
 
-export const SITEACCT_NAME = 'Siteacct';
+export const NAME = 'Siteacct';
 
-const ObjectId = Schema.Types.ObjectId;
+const SObjectId = Schema.Types.ObjectId;
 
-export interface Siteacct extends mongoose.Document {
-  uId: TObjectId;
-  oIds: [TObjectId];
-  name?: String;
-  note?: String;
-  readonly at: Date;
-  readonly upAt: Date;
+export interface Doc extends mongoose.Document, BaseDoc {
+  uId: ObjectId; // current owner
+  name: string;
+  desc: Desc;
 };
 
-const schema = new Schema<Siteacct, mongoose.Model<Siteacct>>({
-  uId: {type: ObjectId, ref: USER_NAME, required: true},
-  oIds: [{type: ObjectId, ref: ORG_NAME}],
-  name: {type: String, trim: true},
-  note: {type: String, trim: true}
+const schema = new Schema<Doc, mongoose.Model<Doc>>({
+  uId: {type: SObjectId, ref: USER_NAME, required: true},
+  oIds: [{type: SObjectId, ref: ORG_NAME}],
+  name: {type: String, required: true, trim: true},
+  desc: { // must be Desc
+    uId: {type: SObjectId, ref: USER_NAME, required: true},
+    note: {type: String, trim: true},
+    id: {type: String, trim: true},
+    url: {type: String, trim: true}
+}
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 
 schema.index({uId: 1}, {unique: true});
 
-export const siteacctModel = mongoose.model(SITEACCT_NAME, schema);
+export const Model = mongoose.model(NAME, schema);
