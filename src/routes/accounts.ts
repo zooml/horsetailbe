@@ -1,10 +1,11 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
-import {DependentError, DupError, RefError, ValueError} from '../controllers/errors';
+import {DependentError, DupError, RefError, ValueError} from '../common/apperrs';
 import { Doc, Model, catById } from '../models/account';
 import {trimOrUndef} from '../utils/util';
-import {logRes} from '../controllers/logger';
+import {logRes} from '../platform/logger';
 import * as desc from './desc';
+import * as authz from './authz';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
@@ -30,7 +31,7 @@ const fromDoc = (o: Doc): {[key: string]: any} => ({
   sumId: o.sumId,
   catId: o.catId,
   isCr: o.isCr,
-  closes: o.closes,
+  closes: o.clos,
   actts: o.actts,
   at: o.at,
   upAt: o.upAt,
@@ -100,6 +101,7 @@ const validate = async (o: Doc) => {
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
+  authz.validate(req, res, SEGMENT);
   // TODO page limit
   const resDocs = await Model.find({oId: res.locals.oId}).sort({num: 1});
   res.send(resDocs.map(fromDoc));
@@ -107,6 +109,7 @@ router.get('/', modelRoute(async (req: Request, res: Response) => {
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
+  authz.validate(req, res, SEGMENT);
   const reqDoc = toDoc(req.body, res.locals.uId, res.locals.oId);
   await validate(reqDoc);
   const resDoc =  await reqDoc.save();
@@ -114,7 +117,11 @@ router.post('/', modelRoute(async (req: Request, res: Response) => {
   logRes(res);
 }));
 
-router.patch('/:account_id', function(req: Request, res: Response) {
+router.patch('/:id', function(req: Request, res: Response) {
+  authz.validate(req, res, SEGMENT, req.params.id);
+
+  // TODO
+
   res.send({id: req.params.account_id, name: 'Cash'});
   logRes(res);
 });

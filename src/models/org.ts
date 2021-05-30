@@ -6,8 +6,8 @@ import { NAME as USER_NAME } from './user';
 const SObjectId = Schema.Types.ObjectId;
 
 export const NAME = 'Org';
-export const ROLES = Object.freeze({
-  ADMIN: -1, // all access
+export const STD_ROLE_IDS = Object.freeze({
+  SUPER: -1, // all access
   AUDIT: -2 // readonly
 });
 
@@ -15,28 +15,28 @@ export interface Doc extends mongoose.Document, BaseDoc {
   saId: ObjectId;
   name: string;
   desc: Desc;
-  users: [{
+  users: {
     id: ObjectId;
-    roles: [{
+    roles: {
       id: number;
       uId: ObjectId;
       at: Date;
-    }];
-  }];
-  funds: [{
+    }[];
+  }[];
+  funds: {
     id: number;
-    name: string;
+    tag: string;
     begAt?: Date;
     at: Date;
     desc: Desc;
-    actts: [ActTgl];
-  }];
-  closes: [{
+    actts: ActTgl[];
+  }[];
+  clos: {
     id: number;
     endAt: Date;
     at: Date;
     desc: Desc;
-  }];
+  }[];
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({

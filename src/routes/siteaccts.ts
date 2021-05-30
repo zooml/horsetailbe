@@ -25,7 +25,10 @@ const validate = (o: Doc) => {
 
 export const create = async (uId: string) => await new Model({uId}).save();
 
-export const findByUser = async (uId: string) => await Model.findOne({uId: toOId(uId)});
+export const findIdByUser = async (uId: string) => {
+  const o = await Model.findOne({uId: toOId(uId)}, {_id: 1});
+  return o?._id;
+}
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
   // TODO get by uId

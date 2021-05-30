@@ -1,38 +1,61 @@
 import { Request, Response, NextFunction } from 'express';
-import { isPathSeg, tryCatch } from '../utils/util';
-import { ServerError, OrgDenied } from '../controllers/errors';
-import { SEGMENT as SESSIONS_SEG } from './sessions';
-import { SEGMENT as USERS_SEG } from './users';
-import { SEGMENT as SITEACCT_SEG } from './siteaccts';
-import { findRolesForUser } from './orgs';
-import { ROLES } from '../models/org';
+import { extractSegs } from '../utils/util';
+import { ForbiddenError } from '../controllers/errors';
+import * as sessions from './sessions';
+import * as users from './users';
+import * as siteaccts from './siteaccts';
+import * as accounts from './accounts';
+import * as txndocs from './txndocs';
+import * as orgs from './orgs';
+import { STD_ROLE_IDS } from '../models/org';
 
 const OID_HDR = 'x-oid';
 
-export const authzMiddleware = (pathPrefix: string) => async (req: Request, res: Response, next: NextFunction) => {
-  if (req.method !== 'HEAD' && req.method !== 'OPTIONS') {
-    const oId = (OID_HDR in req.headers) ? req.headers[OID_HDR] : req.query.oId;
-    res.locals.oId = oId;
-    const iRsc = isPathSeg(pathPrefix, req.path, SITEACCT_SEG, SESSIONS_SEG, USERS_SEG);
-    if (!iRsc || iRsc === 1) {
-      const uId = res.locals.uId;
-      let allowed = false;
-      if (iRsc === 1) {
-        // TODO SECURITY siteacct perms
-      } else {
-        let roles = await findRolesForUser(res);
-        switch (req.method) {
-          case 'GET': // read
-            allowed = 0 < roles.length; // all roles allow read of everything (TODO for now!)
-            break;
-          default: // write
-            allowed = roles.includes(ROLES.ADMIN);
-        }
-      }
-      if (!allowed) {
-        throw new OrgDenied();
-      }
-    }
+const isReadMethod = (req: Request) => { // TODO needed?
+  switch (req.method) {
+    case 'GET':
+    case 'HEAD':
+    case 'OPTIONS':
+      return true;
   }
+  return false;
+};
+
+export const authzPreMiddleware = (pathPrefix: string) => async (req: Request, res: Response, next: NextFunction) => {
+  const oId = (OID_HDR in req.headers) ? req.headers[OID_HDR] : req.query.oId;
+  res.locals.oId = oId;
   next();
 };
+
+export const authzPostMiddleware = (pathPrefix: string) => async (req: Request, res: Response, next: NextFunction) => {
+  // catch all non-existent resources to prevent probing of paths
+  const [rsc,] = extractSegs(pathPrefix, req.path);
+  throw new ForbiddenError(res.locals.uId, isReadMethod(req), rsc ? rsc : req.path, undefined,
+    'unknown resource');
+};
+
+export const validate = async (req: Request, res: Response, rsc: string, rscId?: string, roles?: number[]) => {
+  let allowed = false;
+  const isRead = isReadMethod(req);
+  const uId = res.locals.uId;
+  if (rsc === sessions.SEGMENT) {
+    // no perms required for creating/deleting sessions
+    allowed = true;
+  } else {
+    let roles = await orgs.findRolesForUser(res);
+  
+    switch (rsc) {
+      case users.SEGMENT: 
+        break;
+      case orgs.SEGMENT: 
+        break;
+      case siteaccts.SEGMENT: 
+        break;
+      case accounts.SEGMENT: 
+        break;
+      case txndocs.SEGMENT: 
+       break;
+    }
+  }
+  if (!allowed) throw new ForbiddenError(uId, isRead, rsc, rscId);
+}

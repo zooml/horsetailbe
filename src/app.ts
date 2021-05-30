@@ -1,9 +1,10 @@
 import express, {Request, Response, NextFunction} from 'express';
 import createError from 'http-errors';
 import path from 'path';
-import logger, {loggerMiddleware} from './controllers/logger';
+import logger, {loggerMiddleware} from './platform/logger';
 import mongoose from 'mongoose';
-import {AppError, ServerError, NotFound} from './controllers/errors';
+import {InternalError, NotFound} from './controllers/errors';
+import { AppError } from "./controllers/AppError";
 import * as users from './routes/users';
 import * as orgs from './routes/orgs';
 import * as accounts from './routes/accounts';
@@ -11,7 +12,7 @@ import * as sessions from './routes/sessions';
 import * as siteaccts from './routes/siteaccts';
 import cors from 'cors';
 import { sessionMiddleware } from './routes/session';
-import { authzMiddleware } from './routes/authz';
+import { authzPostMiddleware, authzPreMiddleware } from './routes/authz';
 
 const app = express();
 
@@ -35,15 +36,13 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use(sessionMiddleware(pathPrefix));
-app.use(authzMiddleware(pathPrefix));
+app.use(authzPreMiddleware(pathPrefix));
 app.use(pathPrefix + sessions.SEGMENT, sessions.router);
 app.use(pathPrefix + users.SEGMENT, users.router);
 app.use(pathPrefix + siteaccts.SEGMENT, siteaccts.router);
 app.use(pathPrefix + orgs.SEGMENT, orgs.router);
 app.use(pathPrefix + accounts.SEGMENT, accounts.router);
-
-// default: 'no api' 404 and forward to error handler
-app.use((req, res, next) => next(new NotFound(req.path)));
+app.use(authzPostMiddleware(pathPrefix));
 
 // error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -55,13 +54,15 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     res.json({}); // TODO
   } else {
     let error = err;
-    if (!(err instanceof AppError)) error = new ServerError(err); // not ours so it's unknown
+    if (!(err instanceof AppError)) error = new InternalError(err); // not ours so it's unknown
     res.status(error.statusCode);
-    res.json({
-      code: error.code,
-      message: error.message
-    });
+    if (error.statusCode != 403) { // don't send details of why forbidden
+      res.json({
+        code: error.code,
+        message: error.message
+      });
     }
+  }
 });
 
 if (process.env.NODE_ENV !== 'test') {

@@ -40,12 +40,12 @@ export interface Doc extends mongoose.Document, BaseDoc {
   sumId?: ObjectId;
   catId?: number;
   isCr?: boolean;
-  closes: [{
+  clos: {
     id: number;
     fund: number;
     bal: number;
-  }],
-  actts: [ActTgl]
+  }[],
+  actts: ActTgl[]
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
@@ -62,7 +62,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   sumId: {type: SObjectId, ref: NAME}, // summary/parent, required iif not top-level
   catId: Number, // category, required iif top-level
   isCr: Boolean, // required iif not default
-  closes: [{
+  clos: [{
     id: {type: Number, required: true},
     fund: {type: Number, required: true},
     bal: {type: Number, required: true}

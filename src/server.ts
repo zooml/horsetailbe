@@ -1,6 +1,6 @@
 import app from './app';
 import http from 'http';
-import logger, { logInfo } from './controllers/logger';
+import logger, { logInfo } from './platform/logger';
 import requestStats from 'request-stats';
 
 const normalizePort = (val: any) => {

@@ -8,7 +8,7 @@ export type UserState = {
   tag: string
 };
 
-export const userStates: {[key: string]: UserState} = Object.freeze({
+export const USERSTATES_BY_TAG: {[key: string]: UserState} = Object.freeze({
   SIGNED_UP: {id: 1, tag: 'signedup'},
   WAIT_CONF: {id: 2, tag: 'waitconf'},
   ACTIVE: {id: 3, tag: 'active'},

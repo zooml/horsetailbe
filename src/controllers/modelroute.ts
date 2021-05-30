@@ -1,5 +1,6 @@
 import {Request, Response, NextFunction} from 'express';
-import {AppError, CastError} from './errors';
+import {CastError} from './errors';
+import { AppError } from "./AppError";
 
 const decodeErr = (err: any) => {
   let error = err;

@@ -3,7 +3,7 @@ import { ObjectId } from 'mongoose';
 import { toOId } from '../models/basedoc';
 
 type Api = {
-  uId?: string;
+  uId?: string; // TODO remove if no fromDoc
   note?: string;
   id?: string;
   url?: string;
@@ -23,7 +23,7 @@ export const toDoc = (o: Api, uId: string): Doc => ({
   note: trimOrUndef(o.note)
 });
 
-// TODO is these needed??????
+// TODO is this needed??????
 export const fromDoc = (o: Doc): Api => ({
   uId: o.uId.toString(),
   id: o.id,

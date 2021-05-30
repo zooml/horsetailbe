@@ -1,8 +1,8 @@
 import {Request, Response, NextFunction} from 'express';
 import { MissingOrUnknSession, SessionExpired, SessionIpMismatch } from '../controllers/errors';
 import cookieParser from 'cookie-parser';
-import limits from '../controllers/limits';
-import { isPathSeg } from '../utils/util';
+import limits from '../common/limits';
+import { parseAndMatchPath } from '../utils/util';
 import { SEGMENT as SESSIONS_SEG } from './sessions';
 import { SEGMENT as USERS_SEG } from './users';
 
@@ -34,12 +34,11 @@ const validateCookie = (req: Request): string => {
 export const sessionMiddleware = (pathPrefix: string) => [
   cookieParser(limits.digest.keys),
   (req: Request, res: Response, next: NextFunction) => {
-    if (req.method !== 'HEAD' && req.method !== 'OPTIONS') {
-      const iRsc = isPathSeg(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);
-      if (!iRsc || (iRsc === 2 && req.method !== 'POST')) {
-        const uId = validateCookie(req);
-        res.locals.uId = uId;
-      }
+    // only /sessions and POST:/users are exempt from valid session (TODO confirm email too)
+    const [iRsc,] = parseAndMatchPath(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);
+    if (!iRsc || (iRsc === 2 && req.method !== 'POST')) {
+      const uId = validateCookie(req);
+      res.locals.uId = uId;
     }
     next();
   }

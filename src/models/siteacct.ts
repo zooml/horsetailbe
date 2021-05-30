@@ -22,7 +22,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
     note: {type: String, trim: true},
     id: {type: String, trim: true},
     url: {type: String, trim: true}
-}
+  }
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 
 schema.index({uId: 1}, {unique: true});

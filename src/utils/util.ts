@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import limits from '../controllers/limits';
+import limits from '../common/limits';
 
 export const trimOrUndef = (s: string | undefined): string | undefined => {
   const t = s?.trim();
@@ -27,23 +27,24 @@ const normalizePrefix = (prefix: string): string => {
   return (p.charAt(p.length - 1) === '/') ? p : `${p}/`;
 };
 
-export const extractSeg = (prefix: string, path: string) =>{
+export const extractSegs = (prefix: string, path: string) => {
   const pre = normalizePrefix(prefix);
   if (path.startsWith(pre)) {
     const rem = path.substring(pre.length);
     if (rem) {
-      return rem.split('/', 2)[0];
+      const a = rem.split('/', 3);
+      return [a[0], a[1] || ''];
     }
   }
-  return '';
+  return ['', ''];
 }
 
-export const isPathSeg = (prefix: string, path: string, ...segs: string[]): number => {
-  const seg = extractSeg(prefix, path);
+export const parseAndMatchPath = (prefix: string, path: string, ...segs: string[]): [number, string] => {
+  const [rsc, id] = extractSegs(prefix, path);
   for (let i = 0; i < segs.length; ++i) {
-    if (segs[i] === seg) return i + 1;
+    if (segs[i] === rsc) return [i + 1, id];
   }
-  return 0;
+  return [0, ''];
 };
 
 export const tryCatch = async <T>(f: () => Promise<T>, x?: (e: Error) => void): Promise<T> => {

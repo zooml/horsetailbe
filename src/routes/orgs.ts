@@ -1,16 +1,18 @@
 import express, {Request, Response} from 'express';
 import {trimOrUndef} from '../utils/util';
 import modelRoute from '../controllers/modelroute';
-import {Doc, Model, ROLES} from '../models/org';
-import validator from '../controllers/validator';
+import {Doc, Model, STD_ROLE_IDS} from '../models/org';
+import validator from '../common/validator';
 import { NotFound } from 'http-errors';
 import * as desc from './desc';
+import * as authz from './authz';
+import * as siteaccts from './siteaccts';
+import { InternalError } from '../common/apperrs';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
 
 const toDoc = (o: {[key: string]: any}, uId: string): Doc => new Model({
-  saId: trimOrUndef(o.saId),
   name: trimOrUndef(o.name),
   desc: desc.toDoc(o.desc, uId)
 });
@@ -22,7 +24,7 @@ const fromDoc = (o: Doc) => ({
   desc: o.desc,
   users: o.users,
   funds: o.funds,
-  closes: o.closes,
+  closes: o.clos,
   at: o.at,
   upAt: o.upAt,
   v: o.__v
@@ -42,32 +44,48 @@ export const findRolesForUser = async (res: Response) => {
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
+  authz.validate(req, res, SEGMENT);
   const resDocs = await Model.find({'users.id': res.locals.uId}, {id: 1, saId: 1, name: 1, 'users.$': 1});
   // TODO wrong path, test if getting by SA
   res.send(resDocs?.map(fromDoc) ?? []);
 }));
 
 router.get('/:id', modelRoute(async (req: Request, res: Response) => {
-  const resDoc = await Model.findById(req.params.id);
+  const id = req.params.id;
+  // perf: find org first then pass in roles and 403 if not allowed or not found
+  const resDoc = await Model.findById(id);
+  const roles = resDoc?.users.find(u => u.id.toString() === id)?.roles.map(r => r.id) ?? [];
+  authz.validate(req, res, SEGMENT, id, roles);
   if (!resDoc) throw new NotFound(req.path);
-  // TODO don't include users unless admin role
   res.send(fromDoc(resDoc));
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
+  authz.validate(req, res, SEGMENT);
+    // no authz required, every user can create their own orgs
+    // TODO add authz when user other than siteacct owner can creat orgs
 
-  // TODO siteacct????? 
+
+  // TODO siteacct????? and authz
   // TODO limit # of orgs/siteacct
-
-  const reqDoc = toDoc(req.body, res.locals.uId);
+  const uId = res.locals.uId;
+  const saId = await siteaccts.findIdByUser(uId);
+  if (!saId) throw new InternalError({message: `missing siteacct for user ${uId}`});
+  const at = new Date();
+  const reqDoc = toDoc(req.body, uId);
+  reqDoc.saId = saId;
   reqDoc.users = [{
     id: res.locals.uId,
     roles: [{
-      id: ROLES.ADMIN,
-      uId: res.locals.uId,
-      at: new Date()
-    }]
-  }];
+      id: STD_ROLE_IDS.SUPER,
+      uId,
+      at}]}];
+  reqDoc.funds = [{
+    id: 1,
+    tag: 'general',
+    at,
+    desc: {uId},
+    actts: []}];
   validate(reqDoc);
   const resDoc =  await reqDoc.save();
   res.send(fromDoc(resDoc));
