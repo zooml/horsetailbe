@@ -1,7 +1,13 @@
 import mongoose, { Schema } from 'mongoose';
+import { trimOrUndef } from '../utils/util';
 import { BaseDoc } from './basedoc';
+import * as desc from './desc';
+import bcrypt from 'bcrypt';
+import { CredentialsError, UserNotActive } from '../controllers/errors';
 
 export const NAME = 'User';
+
+const SObjectId = Schema.Types.ObjectId;
 
 export type UserState = {
   id: number,
@@ -23,7 +29,7 @@ export interface Doc extends mongoose.Document, BaseDoc {
   lName?: string;
   st: number;
   opts: {};
-  note?: string;
+  desc: desc.Doc;
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
@@ -33,7 +39,8 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   lName: {type: String, trim: true},
   st: {type: Number, required: true},
   opts: {},
-  desc: { // must be Desc
+  desc: { // desc.Doc schema
+    uId: {type: SObjectId, ref: NAME, required: true},
     note: {type: String, trim: true},
     id: {type: String, trim: true},
     url: {type: String, trim: true}
@@ -43,3 +50,19 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
 schema.index({email: 1}, {unique: true});
 
 export const Model = mongoose.model(NAME, schema);
+
+const salts = 10;
+
+export const encryptPswd = async (pswd: string) => {
+  const s = trimOrUndef(pswd);
+  return await bcrypt.hash(pswd, salts); // salt is in hash
+}
+
+const isMatchingPswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
+
+export const authnUser = async (email: string, pswd: string): Promise<Doc> => {
+  const user = await Model.findOne({email});
+  if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
+  if (user.st !== USERSTATES_BY_TAG.ACTIVE.id) throw new UserNotActive();
+  return user;
+};

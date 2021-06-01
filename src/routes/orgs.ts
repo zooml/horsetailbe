@@ -4,7 +4,7 @@ import modelRoute from '../controllers/modelroute';
 import {Doc, Model, STD_ROLE_IDS} from '../models/org';
 import validator from '../common/validator';
 import { NotFound } from 'http-errors';
-import * as desc from './desc';
+import * as desc from './descs';
 import * as authz from './authz';
 import * as siteaccts from './siteaccts';
 import { InternalError } from '../common/apperrs';
@@ -24,7 +24,7 @@ const fromDoc = (o: Doc) => ({
   desc: o.desc,
   users: o.users,
   funds: o.funds,
-  closes: o.clos,
+  clos: o.clos,
   at: o.at,
   upAt: o.upAt,
   v: o.__v

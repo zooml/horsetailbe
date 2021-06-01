@@ -1,7 +1,9 @@
 import mongoose, {Schema, ObjectId } from 'mongoose';
-import { ActTgl, BaseDoc, Desc } from './basedoc';
+import { BaseDoc } from './basedoc';
 import { NAME as SITEACCT_NAME } from './siteacct';
 import { NAME as USER_NAME } from './user';
+import * as acttgl from './acttgl';
+import * as desc from './desc';
 
 const SObjectId = Schema.Types.ObjectId;
 
@@ -14,7 +16,7 @@ export const STD_ROLE_IDS = Object.freeze({
 export interface Doc extends mongoose.Document, BaseDoc {
   saId: ObjectId;
   name: string;
-  desc: Desc;
+  desc: desc.Doc;
   users: {
     id: ObjectId;
     roles: {
@@ -28,21 +30,21 @@ export interface Doc extends mongoose.Document, BaseDoc {
     tag: string;
     begAt?: Date;
     at: Date;
-    desc: Desc;
-    actts: ActTgl[];
+    desc: desc.Doc;
+    actts: acttgl.Doc[];
   }[];
   clos: {
     id: number;
     endAt: Date;
     at: Date;
-    desc: Desc;
+    desc: desc.Doc;
   }[];
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
   saId: {type: Schema.Types.ObjectId, ref: SITEACCT_NAME, required: true},
   name: {type: String, required: true, trim: true},
-  desc: { // must be Desc
+  desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},
     id: {type: String, trim: true},
@@ -61,16 +63,16 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
     name: {type: String, required: true, trim: true},
     begAt: {type: Date, required: true},
     at: {type: Date, required: true},
-    desc: { // must be Desc
+    desc: { // desc.Doc schema
       uId: {type: SObjectId, ref: USER_NAME, required: true},
       note: {type: String, trim: true},
       id: {type: String, trim: true},
       url: {type: String, trim: true}
     },
-    actts: [{ // must be ActTgl
+    actts: [{ // acttgl.Doc schema
       at: {type: Date, required: true},
       isA: {type: Boolean, required: true},
-      desc: { // must be Desc
+      desc: { // desc.Doc schema
         uId: {type: SObjectId, ref: USER_NAME, required: true},
         note: {type: String, trim: true},
         id: {type: String, trim: true},
@@ -78,11 +80,11 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
       },
     }]
   }],
-  closes: [{
+  clos: [{
     id: {type: Number, required: true},
     endAt: {type: Date, required: true},
     at: {type: Date, required: true},
-    desc: { // must be Desc
+    desc: { // desc.Doc schema
       uId: {type: SObjectId, ref: USER_NAME, required: true},
       note: {type: String, trim: true},
       id: {type: String, trim: true},

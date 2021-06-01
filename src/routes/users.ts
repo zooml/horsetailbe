@@ -1,34 +1,36 @@
 import express, {Request, Response} from 'express';
 import { trimOrUndef } from '../utils/util';
 import modelRoute from '../controllers/modelroute';
-import { Doc, Model, USERSTATES_BY_TAG } from '../models/user';
+import { Doc, Model, USERSTATES_BY_TAG, encryptPswd } from '../models/user';
 import {logRes} from '../platform/logger';
-import { MissingError, InternalError } from '../common/apperrs';
-import { CredentialsError, UserNotActive } from '../controllers/errors';
-import bcrypt from 'bcrypt';
+import { InternalError } from '../common/apperrs';
 import { sessionClear } from './session';
-import validator from '../common/validator';
 import * as siteaccts from './siteaccts';
+import * as rsc from '../controllers/rsc';
+import { validStr } from '../common/validator';
+import LIMITS from '../common/limits';
+import * as descs from './descs';
+import * as bases from './bases';
 
 export const SEGMENT = 'users';
 export const router = express.Router();
 
-const salts = 10;
+const POST_RSC_DEF: rsc.Def = {
+  email: validStr.bind(LIMITS.fields.email, true),
+  pswd: validStr.bind(LIMITS.fields.pswd, true),
+  fName: validStr.bind(LIMITS.fields.fName, true),
+  lName: validStr.bind(LIMITS.fields.lName, true),
+  desc: rsc.validator.bind(descs.POST_RSC_DEF, 'desc')
+};
 
-const encryptPswd = async (pswd: string) => {
-  const s = trimOrUndef(pswd);
-  if (!s) throw new MissingError('pswd');
-  // TODO check length, max 30???
-  return await bcrypt.hash(pswd, salts); // salt is in hash
-}
-
-const validatePswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
-
-export const authnUser = async (email: string, pswd: string): Promise<Doc> => {
-  const user = await Model.findOne({email});
-  if (!user || !await validatePswd(pswd, user.ePswd)) throw new CredentialsError();
-  if (user.st !== USERSTATES_BY_TAG.ACTIVE.id) throw new UserNotActive();
-  return user;
+type GetRsc = bases.Rsc & {
+  id: string;
+  email: string;
+  pswd: string;
+  fName: string;
+  lName?: string;
+  st: number;
+  desc: descs.GetRsc;
 };
 
 const toDoc = async (o: {[key: string]: any}) => new Model({
@@ -40,16 +42,13 @@ const toDoc = async (o: {[key: string]: any}) => new Model({
   note: trimOrUndef(o.note)
 });
 
-const fromDoc = (o: Doc) => ({
-  id: o._id,
+const fromDoc = (o: Doc) => bases.fromDoc(o, {
+  id: o._id.toString(),
   email: o.email,
   fName: o.fName,
   lName: o.lName,
   st: o.st,
-  note: o.note,
-  at: o.at,
-  upAt: o.upAt,
-  v: o.__v
+  desc: descs.fromDoc(o.desc),
 });
 
 const validate = (o: Doc) => {

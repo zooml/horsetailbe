@@ -1,14 +1,14 @@
 import {Request, Response, NextFunction} from 'express';
 import { MissingOrUnknSession, SessionExpired, SessionIpMismatch } from '../controllers/errors';
 import cookieParser from 'cookie-parser';
-import limits from '../common/limits';
+import LIMITS from '../common/limits';
 import { parseAndMatchPath } from '../utils/util';
 import { SEGMENT as SESSIONS_SEG } from './sessions';
 import { SEGMENT as USERS_SEG } from './users';
 
 // TODO SECURITY encrypt/decrypt
 const createCookie = (req: Request, uId: string) =>
-  Buffer.from(`${uId};${req.ip};${Date.now() + limits.session.maxAge * 1000}`, 'ascii').toString('base64');
+  Buffer.from(`${uId};${req.ip};${Date.now() + LIMITS.session.maxAge * 1000}`, 'ascii').toString('base64');
 
 const parseCookie = (cookie: string) => {
   const a = Buffer.from(cookie, 'base64').toString('ascii').split(';');
@@ -32,7 +32,7 @@ const validateCookie = (req: Request): string => {
 };
 
 export const sessionMiddleware = (pathPrefix: string) => [
-  cookieParser(limits.digest.keys),
+  cookieParser(LIMITS.digest.keys),
   (req: Request, res: Response, next: NextFunction) => {
     // only /sessions and POST:/users are exempt from valid session (TODO confirm email too)
     const [iRsc,] = parseAndMatchPath(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);

@@ -4,18 +4,34 @@ import {DependentError, DupError, RefError, ValueError} from '../common/apperrs'
 import { Doc, Model, catById } from '../models/account';
 import {trimOrUndef} from '../utils/util';
 import {logRes} from '../platform/logger';
-import * as desc from './desc';
+import * as descs from './descs';
 import * as authz from './authz';
+import { Def } from '../controllers/rsc';
+import LIMITS from '../common/limits';
+import { validNum } from '../common/validator';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
+
+type PostRsc = {
+  oId: string;
+  num: number;
+  name: string;
+  begAt?: Date;
+  desc: descs.PostRsc;
+};
+
+const POST_RSC_DEF: Def = {
+
+  num: validNum.bind(LIMITS.fields.num, true),
+};
 
 const toDoc = (o: {[key: string]: any}, uId: string, oId: string): Doc => new Model({
   oId,
   num: o.num,
   name: trimOrUndef(o.name),
   begAt: o.begAt,
-  desc: desc.toDoc(o.desc, uId),
+  desc: descs.toDoc(o.desc, uId),
   sumId: trimOrUndef(o.sumId),
   catId: o.catId,
   isCr: o.isCr,
@@ -27,7 +43,7 @@ const fromDoc = (o: Doc): {[key: string]: any} => ({
   num: o.num,
   name: o.name,
   begAt: o.begAt || o.at,
-  desc: o.desc,
+  desc: descs.fromDoc(o.desc),
   sumId: o.sumId,
   catId: o.catId,
   isCr: o.isCr,

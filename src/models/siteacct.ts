@@ -1,7 +1,8 @@
 import mongoose, { Schema, ObjectId } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
-import { BaseDoc, Desc } from './basedoc';
+import { BaseDoc } from './basedoc';
+import * as desc from './desc';
 
 export const NAME = 'Siteacct';
 
@@ -10,14 +11,14 @@ const SObjectId = Schema.Types.ObjectId;
 export interface Doc extends mongoose.Document, BaseDoc {
   uId: ObjectId; // current owner
   name: string;
-  desc: Desc;
+  desc: desc.Doc;
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
   uId: {type: SObjectId, ref: USER_NAME, required: true},
   oIds: [{type: SObjectId, ref: ORG_NAME}],
   name: {type: String, required: true, trim: true},
-  desc: { // must be Desc
+  desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},
     id: {type: String, trim: true},

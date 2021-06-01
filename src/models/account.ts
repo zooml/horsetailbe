@@ -1,5 +1,7 @@
 import mongoose, { Schema, ObjectId } from 'mongoose';
-import { ActTgl, BaseDoc, Desc } from './basedoc';
+import { BaseDoc } from './basedoc';
+import * as acttgl from './acttgl';
+import * as desc from './desc';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 
@@ -36,16 +38,16 @@ export interface Doc extends mongoose.Document, BaseDoc {
   num: number;
   name: string;
   begAt: Date;
-  desc: Desc;
+  desc: desc.Doc;
   sumId?: ObjectId;
   catId?: number;
   isCr?: boolean;
   clos: {
     id: number;
-    fund: number;
+    fnId: number;
     bal: number;
   }[],
-  actts: ActTgl[]
+  actts: acttgl.Doc[]
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
@@ -53,7 +55,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   num: {type: Number, required: true},
   name: {type: String, required: true, trim: true},
   begAt: Date,
-  desc: { // must be Desc
+  desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},
     id: {type: String, trim: true},
@@ -64,13 +66,13 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   isCr: Boolean, // required iif not default
   clos: [{
     id: {type: Number, required: true},
-    fund: {type: Number, required: true},
+    fnId: {type: Number, required: true},
     bal: {type: Number, required: true}
   }],
-  actts: [{ // must be ActTgl
+  actts: [{ // acttgl.Doc schema
     at: {type: Date, required: true},
     isA: {type: Boolean, required: true},
-    desc: { // must be Desc
+    desc: { // desc.Doc schema
       uId: {type: SObjectId, ref: USER_NAME, required: true},
       note: {type: String, trim: true},
       id: {type: String, trim: true},

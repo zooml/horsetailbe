@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import limits from '../common/limits';
+import LIMITS from '../common/limits';
 
 export const trimOrUndef = (s: string | undefined): string | undefined => {
   const t = s?.trim();
@@ -15,7 +15,7 @@ export const toUniqueTs = (date: Date) => {
 };
 
 const digest = (s: string): string => {
-  const algo = crypto.createHmac('md5', limits.digest.keys[0]);
+  const algo = crypto.createHmac('md5', LIMITS.digest.keys[0]);
   algo.update(s);
   return algo.digest('base64');
 }

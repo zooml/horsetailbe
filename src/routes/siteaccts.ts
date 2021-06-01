@@ -2,8 +2,8 @@ import express, { Request, Response } from 'express';
 import { trimOrUndef } from '../utils/util';
 import modelRoute from '../controllers/modelroute';
 import { Doc, Model } from '../models/siteacct';
-import * as desc from './desc';
-import { toOId } from '../models/basedoc';
+import * as desc from './descs';
+import { toObjId } from '../models/basedoc';
 
 export const SEGMENT = 'siteaccts';
 export const router = express.Router();
@@ -26,7 +26,7 @@ const validate = (o: Doc) => {
 export const create = async (uId: string) => await new Model({uId}).save();
 
 export const findIdByUser = async (uId: string) => {
-  const o = await Model.findOne({uId: toOId(uId)}, {_id: 1});
+  const o = await Model.findOne({uId: toObjId(uId)}, {_id: 1});
   return o?._id;
 }
 

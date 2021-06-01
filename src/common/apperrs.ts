@@ -1,5 +1,7 @@
 import { logError, logWarn } from "../platform/logger";
 
+const MAX_STR_V_LEN = 49;
+
 export class AppError extends Error {
   statusCode: number;
   code: number;
@@ -12,10 +14,10 @@ export class AppError extends Error {
   }
 }
 
-export const SERVER_ERROR = 1;
+export const INTERNAL_ERROR = 1;
 export class InternalError extends AppError {
   constructor(err?: any) {
-    super('internal error', 500, SERVER_ERROR);
+    super('internal error', 500, INTERNAL_ERROR);
     logError(`internal error: ${err?.message ? err.message : 'unknown'}`);
     // TODO log stack trace?
   }
@@ -28,7 +30,14 @@ export class UserError extends AppError {
   }
 }
 
-const formatValue = (v: any): string => `${typeof(v) == 'string' ? '"' + v + '"' : v}`;
+const formatValue = (v: any): string => {
+  // TODO v does not convert correctly if object
+  let s = `${typeof(v) == 'string' ? '"' + v + '"' : '' + v}`;
+  if (MAX_STR_V_LEN < s.length) {
+    s = `${s.slice(0, MAX_STR_V_LEN)}...`;
+  }
+  return s;
+}
 
 export const CAST_ERROR = 1101;
 export const REF_ERROR = 1102;
@@ -37,6 +46,10 @@ export const VALUE_ERROR = 1104;
 export const DUP_ERROR = 1105;
 export const MISSING_ERROR = 1106;
 export const MAX_ERROR = 1107;
+export const MIN_ERROR = 1108;
+export const FMT_ERROR = 1109;
+export const EXTRA_FLDS_ERROR = 1110;
+export const DAY_BEG_ERROR = 1111;
 
 export class BadRequest extends UserError {
   constructor(path: string, reason: string, code: number) {
@@ -81,3 +94,24 @@ export class MaxError extends BadRequest {
     super(path, `exceeds max length of ${max}`, MAX_ERROR);
   }
 }
+export class MinError extends BadRequest {
+  constructor(path: string, min: any) {
+    super(path, `does not meet min of ${min}`, MIN_ERROR);
+  }
+}
+export class FmtError extends BadRequest {
+  constructor(path: string, pattern?: string) {
+    super(path, `incorrect format${pattern ? ', should ' + pattern : ''}`, FMT_ERROR);
+  }
+}
+export class ExtraFldsError extends BadRequest {
+  constructor(path: string) {
+    super(path, 'is not allowed', EXTRA_FLDS_ERROR);
+  }
+}
+export class DayBegError extends BadRequest {
+  constructor(path: string) {
+    super(path, 'is not the start of a day', DAY_BEG_ERROR);
+  }
+}
+
