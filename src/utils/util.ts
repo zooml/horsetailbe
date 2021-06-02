@@ -1,8 +1,9 @@
 import crypto from 'crypto';
 import LIMITS from '../common/limits';
 
-export const trimOrUndef = (s: string | undefined): string | undefined => {
-  const t = s?.trim();
+export const trimOrUndef = (v: any): any => {
+  if (!v || typeof v !== 'string') return v;
+  const t = v.trim();
   return t ? t : undefined;
 };
 

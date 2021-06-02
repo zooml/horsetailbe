@@ -31,7 +31,7 @@ const validateCookie = (req: Request): string => {
   return ses.uId;
 };
 
-export const sessionMiddleware = (pathPrefix: string) => [
+export const middleware = (pathPrefix: string) => [
   cookieParser(LIMITS.digest.keys),
   (req: Request, res: Response, next: NextFunction) => {
     // only /sessions and POST:/users are exempt from valid session (TODO confirm email too)
@@ -44,8 +44,8 @@ export const sessionMiddleware = (pathPrefix: string) => [
   }
 ];
 
-export const sessionSet = (req: Request, res: Response, uId: string): Response => 
+export const set = (req: Request, res: Response, uId: string): Response => 
   res.cookie('ses', createCookie(req, uId), {signed: true, httpOnly: true});
 
-export const sessionClear = (res: Response): Response => 
+export const clear = (res: Response): Response => 
   res.clearCookie('ses');

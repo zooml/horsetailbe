@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongoose';
 
-export interface Doc {
+export type Doc = {
   readonly uId: ObjectId; // creating user
   note?: string;
   id?: string; // external ref id

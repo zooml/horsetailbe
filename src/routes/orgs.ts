@@ -1,46 +1,128 @@
-import express, {Request, Response} from 'express';
-import {trimOrUndef} from '../utils/util';
+import express, { Request, Response } from 'express';
 import modelRoute from '../controllers/modelroute';
-import {Doc, Model, STD_ROLE_IDS} from '../models/org';
-import validator from '../common/validator';
+import { Doc, Model, STD_ROLE_IDS, GENERAL_FUND, RoleDoc, UserDoc, FundDoc, CloseDoc, countOrgsPerSA } from '../models/org';
 import { NotFound } from 'http-errors';
-import * as desc from './descs';
+import * as rsc from './rsc';
+import * as descs from './descs';
+import * as acttgls from './acttgls';
 import * as authz from './authz';
-import * as siteaccts from './siteaccts';
-import { InternalError } from '../common/apperrs';
+import * as siteacct from '../models/siteacct';
+import { InternalError, LimitError } from '../common/apperrs';
+import { FIELDS, RESOURCES } from '../common/limits';
+import { fromDate } from '../common/acctdate';
+import { toObjId } from '../models/doc';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
 
-const toDoc = (o: {[key: string]: any}, uId: string): Doc => new Model({
-  name: trimOrUndef(o.name),
-  desc: desc.toDoc(o.desc, uId)
-});
-
-const fromDoc = (o: Doc) => ({
-  id: o._id,
-  saId: o.saId,
-  name: o.name,
-  desc: o.desc,
-  users: o.users,
-  funds: o.funds,
-  clos: o.clos,
-  at: o.at,
-  upAt: o.upAt,
-  v: o.__v
-});
-
-const validate = (o: Doc) => {
-  validator(o);
-  // TODO saId, uId
-  // TODO limit on num orgs/user
+type RoleGet = {
+  id: number;
+  uId: string;
+  at: number;
 };
 
-export const findRolesForUser = async (res: Response) => {
-  const org = await Model.findOne(
-    {_id: res.locals.oId, 'users.id': {uId: res.locals.uId}},
-    {'users.$': 1});
-  return org?.users[0].roles.map(r => r.id) ?? [];
+const fromRoleDoc = (doc: RoleDoc): RoleGet => ({
+  id: doc.id,
+  uId: doc.uId.toString(),
+  at: fromDate(doc.at)
+});
+
+type UserGet = {
+  id: string;
+  roles: RoleGet[];
+};
+
+const fromUserDoc = (doc: UserDoc): UserGet => ({
+  id: doc.id.toString(),
+  roles: doc.roles.map(fromRoleDoc)
+});
+
+type FundGet = {
+  id: number;
+  tag: string;
+  begAt?: number;
+  at: number;
+  desc: descs.Get;
+  actts: acttgls.Get[];
+};
+
+const fromFundDoc = (doc: FundDoc): FundGet => ({
+  id: doc.id,
+  tag: doc.tag,
+  begAt: fromDate(doc.begAt),
+  at: fromDate(doc.at),
+  desc: descs.fromDoc(doc.desc),
+  actts: doc.actts?.map(acttgls.fromDoc)
+});
+
+type CloseGet = {
+  id: number;
+  endAt: number;
+  at: number;
+  desc: descs.Get;
+};
+
+const fromCloseDoc = (doc: CloseDoc): CloseGet => ({
+  id: doc.id,
+  endAt: fromDate(doc.endAt),
+  at: fromDate(doc.at),
+  desc: descs.fromDoc(doc.desc)
+});
+
+type Get = rsc.GetBase & {
+  saId: string;
+  name: string;
+  desc: descs.Get;
+  users: UserGet[];
+  funds: FundGet[];
+  clos: CloseGet[];
+};
+
+const fromDoc = (doc: Doc): Get => ({
+  ...rsc.fromDoc(doc),
+  saId: doc.saId.toString(),
+  name: doc.name,
+  desc: descs.fromDoc(doc.desc),
+  users: doc.users.map(fromUserDoc),
+  funds: doc.funds.map(fromFundDoc),
+  clos: doc.clos.map(fromCloseDoc)
+});
+
+const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.desc];
+
+const toDoc = (o: {[k: string]: any}, uId: string): Doc => new Model({
+  saId: o.saId,
+  name: o.name,
+  desc: descs.toDoc(o.desc, uId)
+});
+
+const toValidDoc = (o: {[k: string]: any}, uId: string): Doc => {
+  const post = {...o};
+  rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
+  // TODO when user spec's saId then test exists here
+  const doc = toDoc(post, uId);
+  // add defaults
+  const at = new Date();
+  const uObjId = toObjId(uId);
+  doc.users = [{
+    id: uObjId,
+    roles: [{
+      id: STD_ROLE_IDS.SUPER,
+      uId: uObjId,
+      at}]}];
+  doc.funds = [{
+    id: GENERAL_FUND.id,
+    tag: GENERAL_FUND.tag,
+    at,
+    desc: {uId: uObjId},
+    actts: []}];
+  return doc;
+};
+
+const applyPostLimits = async (doc: Doc) => {
+  const perSA = await countOrgsPerSA(doc.saId);
+  const lims = RESOURCES.orgs.perSA;
+  if (lims.max <= perSA) throw new LimitError('organizations per site account', lims.max);
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
@@ -62,31 +144,12 @@ router.get('/:id', modelRoute(async (req: Request, res: Response) => {
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
   authz.validate(req, res, SEGMENT);
-    // no authz required, every user can create their own orgs
-    // TODO add authz when user other than siteacct owner can creat orgs
-
-
-  // TODO siteacct????? and authz
-  // TODO limit # of orgs/siteacct
+  // TODO add authz when user other than siteacct owner can creat orgs
   const uId = res.locals.uId;
-  const saId = await siteaccts.findIdByUser(uId);
+  const saId = await siteacct.findIdByUser(uId);
   if (!saId) throw new InternalError({message: `missing siteacct for user ${uId}`});
-  const at = new Date();
-  const reqDoc = toDoc(req.body, uId);
-  reqDoc.saId = saId;
-  reqDoc.users = [{
-    id: res.locals.uId,
-    roles: [{
-      id: STD_ROLE_IDS.SUPER,
-      uId,
-      at}]}];
-  reqDoc.funds = [{
-    id: 1,
-    tag: 'general',
-    at,
-    desc: {uId},
-    actts: []}];
-  validate(reqDoc);
-  const resDoc =  await reqDoc.save();
+  const reqDoc = await toValidDoc(req.body, uId);
+  await applyPostLimits(reqDoc);
+  const resDoc = await reqDoc.save();
   res.send(fromDoc(resDoc));
 }));

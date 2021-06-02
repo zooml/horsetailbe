@@ -1,7 +1,7 @@
 import * as desc from './desc';
 
-export interface Doc {
+export type Doc = {
   at: Date;
-  isA: boolean; // is activation, else suspension
+  isAct: boolean; // is activation, else suspension, must toggle back and forth
   desc: desc.Doc;
 };

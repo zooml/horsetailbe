@@ -1,44 +1,58 @@
 import mongoose, {Schema, ObjectId } from 'mongoose';
-import { BaseDoc } from './basedoc';
 import { NAME as SITEACCT_NAME } from './siteacct';
 import { NAME as USER_NAME } from './user';
+import * as doc from './doc';
 import * as acttgl from './acttgl';
 import * as desc from './desc';
 
 const SObjectId = Schema.Types.ObjectId;
 
 export const NAME = 'Org';
+
 export const STD_ROLE_IDS = Object.freeze({
-  SUPER: -1, // all access
-  AUDIT: -2 // readonly
+  SUPER: 1, // all access
+  AUDIT: 2 // readonly
 });
 
-export interface Doc extends mongoose.Document, BaseDoc {
+export const GENERAL_FUND = {
+  id: 1,
+  tag: 'general'
+};
+
+export type RoleDoc = {
+  id: number;
+  uId: ObjectId;
+  at: Date;
+};
+
+export type UserDoc = {
+  id: ObjectId;
+  roles: RoleDoc[];
+};
+
+export type FundDoc = {
+  id: number;
+  tag: string;
+  begAt?: Date;
+  at: Date;
+  desc: desc.Doc;
+  actts: acttgl.Doc[];
+};
+
+export type CloseDoc = {
+  id: number;
+  endAt: Date;
+  at: Date;
+  desc: desc.Doc;
+};
+
+export interface Doc extends doc.Base {
   saId: ObjectId;
   name: string;
   desc: desc.Doc;
-  users: {
-    id: ObjectId;
-    roles: {
-      id: number;
-      uId: ObjectId;
-      at: Date;
-    }[];
-  }[];
-  funds: {
-    id: number;
-    tag: string;
-    begAt?: Date;
-    at: Date;
-    desc: desc.Doc;
-    actts: acttgl.Doc[];
-  }[];
-  clos: {
-    id: number;
-    endAt: Date;
-    at: Date;
-    desc: desc.Doc;
-  }[];
+  users: UserDoc[];
+  funds: FundDoc[];
+  clos: CloseDoc[];
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
@@ -50,15 +64,15 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
     id: {type: String, trim: true},
     url: {type: String, trim: true}
   },
-  users: [{
+  users: [{ // UserDoc schema
     id: {type: SObjectId, ref: USER_NAME, required: true},
-    roles: [{
+    roles: [{ // RoleDoc schema
       id: {type: Number, required: true},
       uId: {type: SObjectId, ref: USER_NAME, required: true},
       at: {type: Date, required: true}
     }]
   }],
-  funds: [{
+  funds: [{ // FundDoc schema
     id: {type: Number, required: true},
     name: {type: String, required: true, trim: true},
     begAt: {type: Date, required: true},
@@ -71,7 +85,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
     },
     actts: [{ // acttgl.Doc schema
       at: {type: Date, required: true},
-      isA: {type: Boolean, required: true},
+      isAct: {type: Boolean, required: true},
       desc: { // desc.Doc schema
         uId: {type: SObjectId, ref: USER_NAME, required: true},
         note: {type: String, trim: true},
@@ -98,3 +112,12 @@ schema
   .index({'users.id': 1});
 
 export const Model = mongoose.model(NAME, schema);
+
+export const findRolesForUser = async (oId: string, uId: string): Promise<number[]> => {
+  const org = await Model.findOne(
+    {_id: oId, 'users.id': uId},
+    {'users.$': 1});
+  return org?.users[0].roles.map(r => r.id) ?? [];
+};
+
+export const countOrgsPerSA = async (saId: ObjectId): Promise<number> => await Model.countDocuments({saId});

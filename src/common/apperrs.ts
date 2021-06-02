@@ -50,23 +50,29 @@ export const MIN_ERROR = 1108;
 export const FMT_ERROR = 1109;
 export const EXTRA_FLDS_ERROR = 1110;
 export const DAY_BEG_ERROR = 1111;
+export const LIMIT_ERROR = 1112;
 
 export class BadRequest extends UserError {
-  constructor(path: string, reason: string, code: number) {
-    super(`field ${path} ${reason}`, 400, code);
+  constructor(message: string, code: number) {
+    super(message, 400, code);
   }
 }
-export class CastError extends BadRequest {
+export class BadRequestFld extends BadRequest {
+  constructor(path: string, reason: string, code: number) {
+    super(`field ${path} ${reason}`, code);
+  }
+}
+export class CastError extends BadRequestFld {
   constructor(path: string, value?: any) {
     super(path, `value ${value? formatValue(value) : ''} not correct type`, CAST_ERROR);
   }
 }
-export class RefError extends BadRequest {
+export class RefError extends BadRequestFld {
   constructor(path: string, refType: string, id: any) {
     super(path, `has non-existing ${refType} id ${formatValue(id)}`, REF_ERROR);
   }
 }
-export class DependentError extends BadRequest {
+export class DependentError extends BadRequestFld {
   constructor(path: string, other: string, xor?: boolean) {
     super(
       path, 
@@ -74,44 +80,48 @@ export class DependentError extends BadRequest {
       DEPENDENT_ERROR);
   }
 }
-export class ValueError extends BadRequest {
+export class ValueError extends BadRequestFld {
   constructor(path: string, value: any, reason: string) {
     super(path, `value ${formatValue(value)} ${reason}`, VALUE_ERROR);
   }
 }
-export class DupError extends BadRequest {
+export class DupError extends BadRequestFld {
   constructor(path: string, value: any) {
     super(path, `value ${formatValue(value)} is not unique`, DUP_ERROR);
   }
 }
-export class MissingError extends BadRequest {
+export class MissingError extends BadRequestFld {
   constructor(path: string) {
     super(path, 'is missing', MISSING_ERROR);
   }
 }
-export class MaxError extends BadRequest {
+export class MaxError extends BadRequestFld {
   constructor(path: string, max: number) {
     super(path, `exceeds max length of ${max}`, MAX_ERROR);
   }
 }
-export class MinError extends BadRequest {
+export class MinError extends BadRequestFld {
   constructor(path: string, min: any) {
     super(path, `does not meet min of ${min}`, MIN_ERROR);
   }
 }
-export class FmtError extends BadRequest {
+export class FmtError extends BadRequestFld {
   constructor(path: string, pattern?: string) {
     super(path, `incorrect format${pattern ? ', should ' + pattern : ''}`, FMT_ERROR);
   }
 }
-export class ExtraFldsError extends BadRequest {
+export class ExtraFldsError extends BadRequestFld {
   constructor(path: string) {
     super(path, 'is not allowed', EXTRA_FLDS_ERROR);
   }
 }
-export class DayBegError extends BadRequest {
+export class DayBegError extends BadRequestFld {
   constructor(path: string) {
     super(path, 'is not the start of a day', DAY_BEG_ERROR);
   }
 }
-
+export class LimitError extends BadRequest {
+  constructor(lim: string, max: number) {
+    super(`${lim} exceeds max of ${max}`, LIMIT_ERROR);
+  }
+}

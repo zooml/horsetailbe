@@ -1,5 +1,5 @@
 import mongoose, { Schema, ObjectId } from 'mongoose';
-import { BaseDoc } from './basedoc';
+import * as doc from './doc';
 import * as acttgl from './acttgl';
 import * as desc from './desc';
 import { NAME as ORG_NAME } from './org';
@@ -15,7 +15,7 @@ export type Category = {
   isCr: boolean;
 };
 
-export const CAT_BY_TAG: {[key: string]: Category} = Object.freeze({
+export const CAT_BY_TAG: {[k: string]: Category} = Object.freeze({
   ASSET: {id: 1, tag: 'asset', isCr: false},
   LIABILITY: {id: 2, tag: 'liability', isCr: true},
   EQUITY: {id: 3, tag: 'equity', isCr: true},
@@ -33,7 +33,7 @@ export const catById = (id: number): Category | undefined => {
   return undefined;
 }
 
-export interface Doc extends mongoose.Document, BaseDoc {
+export interface Doc extends doc.Base {
   readonly oId: ObjectId;
   num: number;
   name: string;
@@ -71,7 +71,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   }],
   actts: [{ // acttgl.Doc schema
     at: {type: Date, required: true},
-    isA: {type: Boolean, required: true},
+    isAct: {type: Boolean, required: true},
     desc: { // desc.Doc schema
       uId: {type: SObjectId, ref: USER_NAME, required: true},
       note: {type: String, trim: true},

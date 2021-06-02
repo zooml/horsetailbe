@@ -2,24 +2,23 @@
 
 // TODO dates
 
+// note cannot determine today since it depends on timezone
 export const today = () => new Date(); // TODO fix this to start at day begin UTC
 
-export const toDate = (vSecs: number): Date => {
-  // TODO fix
-  return new Date(vSecs * 1000);
+export const toDate = (v: any): any => {
+  if (!v || typeof v !== 'number') return v;
+  return new Date(v);
 };
 
-export const toNumSecs = (v: Date): number => {
-  return v.getTime() / 1000;
-};
+export const fromDate = (v: Date | undefined): number | undefined => v?.getTime();
 
-export const toStr = (v: Date): string => {
+export const toDateStr = (v: Date): string => {
 // TODO fix
 // YYYY-MM-DDTHH:mm:ss.sssZ
   return v.toISOString().replace(/T/, ' ').slice(0, 18); 
 };
 
-export const toStrDay = (v: Date): string => {
+export const toDayStr = (v: Date): string => {
   // TODO fix
   return v.toISOString().slice(0, 10); 
 };

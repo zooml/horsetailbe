@@ -16,8 +16,8 @@ if (process.env.NODE_ENV === 'production') {
   logger.add(new winston.transports.Console());
 }
 
-const log = (msg: string | {[key: string]: any}, level: string, res?: Response) => {
-  const params: {[key: string]: any} = typeof(msg) === 'string' ? {message: msg, level} : {...msg, level};
+const log = (msg: string | {[k: string]: any}, level: string, res?: Response) => {
+  const params: {[k: string]: any} = typeof(msg) === 'string' ? {message: msg, level} : {...msg, level};
   if (res) {
     res.locals.logger.log(params);
   } else {
@@ -27,17 +27,17 @@ const log = (msg: string | {[key: string]: any}, level: string, res?: Response) 
   }
 };
 
-export const logError = (msg: string | {[key: string]: any}, res?: Response) => log(msg, 'error', res);
-export const logWarn = (msg: string | {[key: string]: any}, res?: Response) => log(msg, 'warn', res);
-export const logInfo = (msg: string | {[key: string]: any}, res?: Response) => log(msg, 'info', res);
-export const logDebug = (msg: string | {[key: string]: any}, res?: Response) => log(msg, 'debug', res);
+export const logError = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'error', res);
+export const logWarn = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'warn', res);
+export const logInfo = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'info', res);
+export const logDebug = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'debug', res);
 export const logRes = (res: Response) => {
   const meta = {status: res.status, ms: Date.now() - res.locals.date};
   // TODO size
   logInfo(meta, res);
 }
 
-export const loggerMiddleware = [
+export const middleware = [
   rTracer.expressMiddleware(),
   (req: Request, res: Response, next: NextFunction) => {
     const rId = rTracer.id()

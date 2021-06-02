@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import { trimOrUndef } from '../utils/util';
-import { BaseDoc } from './basedoc';
+import * as doc from './doc';
 import * as desc from './desc';
 import bcrypt from 'bcrypt';
 import { CredentialsError, UserNotActive } from '../controllers/errors';
@@ -14,7 +14,7 @@ export type UserState = {
   tag: string
 };
 
-export const USERSTATES_BY_TAG: {[key: string]: UserState} = Object.freeze({
+export const USERSTATES_BY_TAG: {[k: string]: UserState} = Object.freeze({
   SIGNED_UP: {id: 1, tag: 'signedup'},
   WAIT_CONF: {id: 2, tag: 'waitconf'},
   ACTIVE: {id: 3, tag: 'active'},
@@ -22,7 +22,7 @@ export const USERSTATES_BY_TAG: {[key: string]: UserState} = Object.freeze({
   DELETED: {id: 5, tag: 'deleted'},
 });
 
-export interface Doc extends mongoose.Document, BaseDoc {
+export interface Doc extends doc.Base {
   email: string;
   ePswd: string;
   fName: string;

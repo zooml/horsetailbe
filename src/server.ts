@@ -18,7 +18,7 @@ const port = normalizePort(process.env.PORT || '5000'); // TODO port???
 app.set('port', port);
 
 const server = http.createServer(app).listen(port);
-server.on('error', (error: {[key: string]: any}) => {
+server.on('error', (error: {[k: string]: any}) => {
   if (error.syscall !== 'listen') {
     throw error;
   }

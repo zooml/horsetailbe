@@ -2,14 +2,14 @@ import mongoose, { Schema, ObjectId } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 import { NAME as ACCOUNT_NAME } from './account';
-import { BaseDoc } from './basedoc';
+import * as doc from './doc';
 import * as desc from './desc';
 
 export const NAME = 'TxnDoc';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export interface Doc extends mongoose.Document, BaseDoc {
+export interface Doc extends doc.Base {
   oId: ObjectId;
   ts: string;
   kind: string;
@@ -50,3 +50,5 @@ schema
   .index({oId: 1, 'amts.acId': 1});
 
 export const Model = mongoose.model(NAME, schema);
+
+// TODO https://mongoosejs.com/docs/api.html#query_Query-estimatedDocumentCount

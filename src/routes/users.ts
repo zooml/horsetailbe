@@ -1,59 +1,48 @@
 import express, {Request, Response} from 'express';
-import { trimOrUndef } from '../utils/util';
 import modelRoute from '../controllers/modelroute';
-import { Doc, Model, USERSTATES_BY_TAG, encryptPswd } from '../models/user';
-import {logRes} from '../platform/logger';
+import { Doc, Model, USERSTATES_BY_TAG as USER_STATES, encryptPswd } from '../models/user';
 import { InternalError } from '../common/apperrs';
-import { sessionClear } from './session';
-import * as siteaccts from './siteaccts';
-import * as rsc from '../controllers/rsc';
-import { validStr } from '../common/validator';
-import LIMITS from '../common/limits';
+import * as session from './session';
+import * as siteacct from '../models/siteacct';
+import { FIELDS } from '../common/limits';
 import * as descs from './descs';
-import * as bases from './bases';
+import * as rsc from './rsc';
 
 export const SEGMENT = 'users';
 export const router = express.Router();
 
-const POST_RSC_DEF: rsc.Def = {
-  email: validStr.bind(LIMITS.fields.email, true),
-  pswd: validStr.bind(LIMITS.fields.pswd, true),
-  fName: validStr.bind(LIMITS.fields.fName, true),
-  lName: validStr.bind(LIMITS.fields.lName, true),
-  desc: rsc.validator.bind(descs.POST_RSC_DEF, 'desc')
-};
-
-type GetRsc = bases.Rsc & {
-  id: string;
+type Get = rsc.GetBase & {
   email: string;
-  pswd: string;
   fName: string;
   lName?: string;
   st: number;
-  desc: descs.GetRsc;
+  desc: descs.Get;
 };
 
-const toDoc = async (o: {[key: string]: any}) => new Model({
-  email: trimOrUndef(o.email)?.toLowerCase(),
-  ePswd: await encryptPswd(o.pswd),
-  fName: trimOrUndef(o.fName),
-  lName: trimOrUndef(o.lName),
-  st: USERSTATES_BY_TAG.ACTIVE.id, // TODO
-  note: trimOrUndef(o.note)
+const fromDoc = (doc: Doc): Get => ({
+  ...rsc.fromDoc(doc),
+  email: doc.email,
+  fName: doc.fName,
+  lName: doc.lName,
+  st: doc.st,
+  desc: descs.fromDoc(doc.desc),
 });
 
-const fromDoc = (o: Doc) => bases.fromDoc(o, {
-  id: o._id.toString(),
+const POST_DEF: rsc.Def = [FIELDS.email, FIELDS.pswd, FIELDS.fName, FIELDS.lName, FIELDS.desc];
+
+const toDoc = async (o: {[k: string]: any}, uId: string) => new Model({
   email: o.email,
+  ePswd: await encryptPswd(o.pswd),
   fName: o.fName,
   lName: o.lName,
-  st: o.st,
-  desc: descs.fromDoc(o.desc),
+  st: USER_STATES.ACTIVE.id, // TODO user state
+  desc: descs.toDoc(o.desc, uId)
 });
 
-const validate = (o: Doc) => {
-  validator(o);
-  // TODO name, ....
+const toValidDoc = async (o: {[k: string]: any}, uId: string) => {
+  const post = {...o};
+  rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
+  return await toDoc(post, uId);
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
@@ -67,11 +56,9 @@ router.get('/', modelRoute(async (req: Request, res: Response) => {
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
-  const reqDoc = await toDoc(req.body);
-  validate(reqDoc);
+  const reqDoc = await toValidDoc(req.body, res.locals.uId);
   const resDoc =  await reqDoc.save();
-  siteaccts.create(resDoc._id); // TODO move to email confirm
-  sessionClear(res)
+  siteacct.create(res.locals.uId); // TODO move to email confirm
+  session.clear(res)
     .send(fromDoc(resDoc));
-  logRes(res);
 }));

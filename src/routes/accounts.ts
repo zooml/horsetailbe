@@ -6,27 +6,23 @@ import {trimOrUndef} from '../utils/util';
 import {logRes} from '../platform/logger';
 import * as descs from './descs';
 import * as authz from './authz';
-import { Def } from '../controllers/rsc';
-import LIMITS from '../common/limits';
-import { validNum } from '../common/validator';
+import * as rsc from './rsc';
+import { FIELDS } from '../common/limits';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
 
-type PostRsc = {
+type Get = rsc.GetBase & {
   oId: string;
   num: number;
   name: string;
-  begAt?: Date;
-  desc: descs.PostRsc;
+  begAt?: number;
+  desc: descs.Get;
 };
 
-const POST_RSC_DEF: Def = {
+const POST_DEF: rsc.Def = [FIELDS.oId, FIELDS.num, FIELDS.name, FIELDS.begAt, FIELDS.desc];
 
-  num: validNum.bind(LIMITS.fields.num, true),
-};
-
-const toDoc = (o: {[key: string]: any}, uId: string, oId: string): Doc => new Model({
+const toDoc = (o: {[k: string]: any}, uId: string, oId: string): Doc => new Model({
   oId,
   num: o.num,
   name: trimOrUndef(o.name),
@@ -37,7 +33,7 @@ const toDoc = (o: {[key: string]: any}, uId: string, oId: string): Doc => new Mo
   isCr: o.isCr,
 });
 
-const fromDoc = (o: Doc): {[key: string]: any} => ({
+const fromDoc = (o: Doc): {[k: string]: any} => ({
   id: o._id,
   oId: o.oId,
   num: o.num,

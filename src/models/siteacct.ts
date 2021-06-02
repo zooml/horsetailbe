@@ -1,14 +1,14 @@
 import mongoose, { Schema, ObjectId } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
-import { BaseDoc } from './basedoc';
+import * as doc from './doc';
 import * as desc from './desc';
 
 export const NAME = 'Siteacct';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export interface Doc extends mongoose.Document, BaseDoc {
+export interface Doc extends doc.Base {
   uId: ObjectId; // current owner
   name: string;
   desc: desc.Doc;
@@ -29,3 +29,10 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
 schema.index({uId: 1}, {unique: true});
 
 export const Model = mongoose.model(NAME, schema);
+
+export const create = async (uId: string) => await new Model({uId}).save();
+
+export const findIdByUser = async (uId: string): Promise<ObjectId | undefined> => {
+  const o = await Model.findOne({uId: doc.toObjId(uId)}, {_id: 1});
+  return o?._id;
+}

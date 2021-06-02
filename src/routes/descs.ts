@@ -1,36 +1,22 @@
-import { trimOrUndef } from "../utils/util";
-import { toObjId } from '../models/basedoc';
+import { FIELDS } from "../common/limits";
+import { toObjId } from '../models/doc';
 import * as desc from '../models/desc';
-import LIMITS from "../common/limits";
-import { validStr } from "../common/validator";
-import { Def } from "../controllers/rsc";
+import * as bases from './rsc';
 
-export type PostRsc = {
+export type Get = {
+  uId: string;
   note?: string;
   id?: string;
   url?: string;
 };
 
-export type GetRsc = PostRsc & {
-  uId: string;
-};
+export const POST_DEF: bases.Def = [FIELDS.note, FIELDS.id, FIELDS.url];
 
-export const POST_RSC_DEF: Def = {
-  note: validStr.bind(LIMITS.fields.note, true),
-  id: validStr.bind(LIMITS.fields.id, true),
-  url: validStr.bind(LIMITS.fields.url, true)
-};
+export const toDoc = (o: {[k: string]: any}, uId: string): desc.Doc => ({...o, uId: toObjId(uId)});
 
-export const toDoc = (o: PostRsc, uId: string): desc.Doc => ({
-  uId: toObjId(uId),
-  id: trimOrUndef(o.id),
-  url: trimOrUndef(o.url),
-  note: trimOrUndef(o.note)
-});
-
-export const fromDoc = (o: desc.Doc): GetRsc => ({
-  uId: o.uId.toString(),
-  id: o.id,
-  url: o.url,
-  note: o.note
+export const fromDoc = (doc: desc.Doc): Get => ({
+  uId: doc.uId.toString(),
+  note: doc.note,
+  id: doc.id,
+  url: doc.url
 });

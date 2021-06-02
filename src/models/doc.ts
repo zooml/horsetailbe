@@ -1,6 +1,6 @@
-import { Schema } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface BaseDoc {
+export interface Base extends mongoose.Document {
   readonly at: Date;
   readonly upAt: Date;
 };
