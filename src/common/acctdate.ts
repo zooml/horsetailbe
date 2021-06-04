@@ -15,12 +15,12 @@ export const fromDate = (v: Date | undefined): number | undefined => v?.getTime(
 export const toDateStr = (v: Date): string => {
 // TODO fix
 // YYYY-MM-DDTHH:mm:ss.sssZ
-  return v.toISOString().replace(/T/, ' ').slice(0, 18); 
+  return v.toISOString().replace(/T/, ' ').slice(0, 18);
 };
 
 export const toDayStr = (v: Date): string => {
   // TODO fix
-  return v.toISOString().slice(0, 10); 
+  return v.toISOString().slice(0, 10);
 };
 
 export const validDayBeg = (v: Date) => {

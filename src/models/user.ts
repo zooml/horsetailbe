@@ -60,7 +60,7 @@ export const encryptPswd = async (pswd: string) => {
 
 const isMatchingPswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
 
-export const authnUser = async (email: string, pswd: string): Promise<Doc> => {
+export const authn = async (email: string, pswd: string): Promise<Doc> => {
   const user = await Model.findOne({email});
   if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
   if (user.st !== USERSTATES_BY_TAG.ACTIVE.id) throw new UserNotActive();

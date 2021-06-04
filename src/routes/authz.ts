@@ -8,6 +8,7 @@ import * as accounts from './accounts';
 import * as txndocs from './txndocs';
 import * as orgs from './orgs';
 import { findRolesForUser, STD_ROLE_IDS } from '../models/org';
+import { logError } from '../platform/logger';
 
 const OID_HDR = 'x-oid';
 
@@ -27,11 +28,10 @@ export const preMiddleware = (pathPrefix: string) => async (req: Request, res: R
   next();
 };
 
-export const postMiddleware = (pathPrefix: string) => async (req: Request, res: Response, next: NextFunction) => {
+export const notFound = (pathPrefix: string) => (req: Request, res: Response) => {
   // catch all non-existent resources to prevent probing of paths
-  const [rsc,] = extractSegs(pathPrefix, req.path);
-  throw new ForbiddenError(res.locals.uId, isReadMethod(req), rsc ? rsc : req.path, undefined,
-    'unknown resource');
+  throw new ForbiddenError(res.locals.uId, isReadMethod(req),
+    req.path, undefined, 'unknown resource'); // TODO add pathPrefix????
 };
 
 export const validate = async (req: Request, res: Response, rsc: string, rscId?: string, roles?: number[]) => {
@@ -43,20 +43,20 @@ export const validate = async (req: Request, res: Response, rsc: string, rscId?:
     // no perms required for creating/deleting sessions
     allowed = true;
   } else {
-    let roles = await findRolesForUser(oId, uId);
-  
+    const roles = await findRolesForUser(oId, uId);
+
     switch (rsc) {
-      case users.SEGMENT: 
+      case users.SEGMENT:
         break;
-      case orgs.SEGMENT: 
+      case orgs.SEGMENT:
         break;
-      case siteaccts.SEGMENT: 
+      case siteaccts.SEGMENT:
         break;
-      case accounts.SEGMENT: 
+      case accounts.SEGMENT:
         break;
-      case txndocs.SEGMENT: 
+      case txndocs.SEGMENT:
        break;
     }
   }
-  if (!allowed) throw new ForbiddenError(uId, isRead, rsc, rscId);
+  // if (!allowed) throw new ForbiddenError(uId, isRead, rsc, rscId);
 }

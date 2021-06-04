@@ -5,15 +5,16 @@ import LIMITS from '../common/limits';
 import { parseAndMatchPath } from '../utils/util';
 import { SEGMENT as SESSIONS_SEG } from './sessions';
 import { SEGMENT as USERS_SEG } from './users';
+import { logInfo } from '../platform/logger';
 
 // TODO SECURITY encrypt/decrypt
 const createCookie = (req: Request, uId: string) =>
-  Buffer.from(`${uId};${req.ip};${Date.now() + LIMITS.session.maxAge * 1000}`, 'ascii').toString('base64');
+  Buffer.from(`${uId};${req.ip};${Date.now() / 1000 + LIMITS.session.maxAge}`, 'ascii').toString('base64');
 
 const parseCookie = (cookie: string) => {
   const a = Buffer.from(cookie, 'base64').toString('ascii').split(';');
   if (a.length !== 3) throw new MissingOrUnknSession();
-  const exp = Number.parseInt(a[2]);
+  const exp = Number.parseInt(a[2], 10);
   if (!a[0] || !a[1] || Number.isNaN(exp)) throw new MissingOrUnknSession();
   return {
     uId: a[0],
@@ -27,7 +28,7 @@ const validateCookie = (req: Request): string => {
   if (!value) throw new MissingOrUnknSession();
   const ses = parseCookie(value);
   if (ses.ip !== req.ip) throw new SessionIpMismatch();
-  if (ses.exp < Date.now()) throw new SessionExpired(); // TODO refresh if within 90% of expiration
+  if (ses.exp * 1000 < Date.now()) throw new SessionExpired(); // TODO refresh if within 90% of expiration
   return ses.uId;
 };
 
@@ -38,14 +39,15 @@ export const middleware = (pathPrefix: string) => [
     const [iRsc,] = parseAndMatchPath(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);
     if (!iRsc || (iRsc === 2 && req.method !== 'POST')) {
       const uId = validateCookie(req);
+      logInfo({uId}, res);
       res.locals.uId = uId;
     }
     next();
   }
 ];
 
-export const set = (req: Request, res: Response, uId: string): Response => 
+export const set = (req: Request, res: Response, uId: string): Response =>
   res.cookie('ses', createCookie(req, uId), {signed: true, httpOnly: true});
 
-export const clear = (res: Response): Response => 
+export const clear = (res: Response): Response =>
   res.clearCookie('ses');

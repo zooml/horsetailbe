@@ -42,7 +42,7 @@ const formatUrlPath = (path: string): string => path.length <= 1 ? '(root)' : pa
 export const FORBIDDEN_ERROR = 1301;
 export class ForbiddenError extends UserError {
   constructor(uId: string, isRead: boolean, rsc: string, rscId?: string, msg?: string) {
-    super(`uId ${uId} forbidden ${isRead ? 'read' : 'write'} on rsc ${rsc}${rscId? '/' + rscId : ''}${msg ? ' (' + msg + ') ' : ''}`, 
+    super(`uId ${uId} forbidden ${isRead ? 'read' : 'write'} on rsc ${rsc}${rscId? '/' + rscId : ''}${msg ? ' (' + msg + ') ' : ''}`,
       403, FORBIDDEN_ERROR);
   }
 }

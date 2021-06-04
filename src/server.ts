@@ -41,7 +41,7 @@ server.on('listening', () => {
   const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   logger.info('listening on ' + bind);
 });
-requestStats(server).on('complete', (o: requestStats.Stats) => 
+requestStats(server).on('complete', (o: requestStats.Stats) =>
   logInfo({status: o.res.status, ms: o.time, reqSz: o.req.bytes, resSz: o.res.bytes}));
 
 export default server;

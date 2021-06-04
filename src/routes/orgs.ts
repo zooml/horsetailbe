@@ -11,6 +11,7 @@ import { InternalError, LimitError } from '../common/apperrs';
 import { FIELDS, RESOURCES } from '../common/limits';
 import { fromDate } from '../common/acctdate';
 import { toObjId } from '../models/doc';
+import { ObjectId } from 'mongoose';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
@@ -96,8 +97,8 @@ const toDoc = (o: {[k: string]: any}, uId: string): Doc => new Model({
   desc: descs.toDoc(o.desc, uId)
 });
 
-const toValidDoc = (o: {[k: string]: any}, uId: string): Doc => {
-  const post = {...o};
+const toValidDoc = (o: {[k: string]: any}, uId: string, saId: ObjectId): Doc => {
+  const post = {...o, saId}; // TODO always use user's sa for now
   rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
   // TODO when user spec's saId then test exists here
   const doc = toDoc(post, uId);
@@ -119,17 +120,17 @@ const toValidDoc = (o: {[k: string]: any}, uId: string): Doc => {
   return doc;
 };
 
-const applyPostLimits = async (doc: Doc) => {
+const validPostLimits = async (doc: Doc) => {
   const perSA = await countOrgsPerSA(doc.saId);
-  const lims = RESOURCES.orgs.perSA;
-  if (lims.max <= perSA) throw new LimitError('organizations per site account', lims.max);
+  const max = RESOURCES.orgs.perSA.max;
+  if (max <= perSA) throw new LimitError('organizations per site account', max);
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
-  authz.validate(req, res, SEGMENT);
+  await authz.validate(req, res, SEGMENT);
   const resDocs = await Model.find({'users.id': res.locals.uId}, {id: 1, saId: 1, name: 1, 'users.$': 1});
   // TODO wrong path, test if getting by SA
-  res.send(resDocs?.map(fromDoc) ?? []);
+  res.json(resDocs?.map(fromDoc) ?? []);
 }));
 
 router.get('/:id', modelRoute(async (req: Request, res: Response) => {
@@ -137,19 +138,19 @@ router.get('/:id', modelRoute(async (req: Request, res: Response) => {
   // perf: find org first then pass in roles and 403 if not allowed or not found
   const resDoc = await Model.findById(id);
   const roles = resDoc?.users.find(u => u.id.toString() === id)?.roles.map(r => r.id) ?? [];
-  authz.validate(req, res, SEGMENT, id, roles);
+  await authz.validate(req, res, SEGMENT, id, roles);
   if (!resDoc) throw new NotFound(req.path);
-  res.send(fromDoc(resDoc));
+  res.json(fromDoc(resDoc));
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
-  authz.validate(req, res, SEGMENT);
+  await authz.validate(req, res, SEGMENT);
   // TODO add authz when user other than siteacct owner can creat orgs
   const uId = res.locals.uId;
   const saId = await siteacct.findIdByUser(uId);
   if (!saId) throw new InternalError({message: `missing siteacct for user ${uId}`});
-  const reqDoc = await toValidDoc(req.body, uId);
-  await applyPostLimits(reqDoc);
+  const reqDoc = toValidDoc(req.body, uId, saId);
+  await validPostLimits(reqDoc);
   const resDoc = await reqDoc.save();
-  res.send(fromDoc(resDoc));
+  res.json(fromDoc(resDoc));
 }));

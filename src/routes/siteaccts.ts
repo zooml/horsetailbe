@@ -31,6 +31,5 @@ router.get('/', modelRoute(async (req: Request, res: Response) => {
 //   const reqDoc = toDoc(req.body, res.locals.uId);
 //   validate(reqDoc);
 //   const resDoc =  await reqDoc.save();
-//   res.send(fromDoc(resDoc));
-//   logRes(res);
+//   res.json(fromDoc(resDoc));
 // }));

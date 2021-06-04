@@ -15,7 +15,7 @@ export type Category = {
   isCr: boolean;
 };
 
-export const CAT_BY_TAG: {[k: string]: Category} = Object.freeze({
+export const CATEGORIES: {[k: string]: Category} = Object.freeze({
   ASSET: {id: 1, tag: 'asset', isCr: false},
   LIABILITY: {id: 2, tag: 'liability', isCr: true},
   EQUITY: {id: 3, tag: 'equity', isCr: true},
@@ -24,14 +24,11 @@ export const CAT_BY_TAG: {[k: string]: Category} = Object.freeze({
 });
 
 export const catById = (id: number): Category | undefined => {
-  for (const name in CAT_BY_TAG) {
-    const cat = CAT_BY_TAG[name];
-    if (cat.id === id) {
-      return cat;
-    }
+  for (const cat of Object.values(CATEGORIES)) {
+    if (cat.id === id) return cat;
   }
   return undefined;
-}
+};
 
 export interface Doc extends doc.Base {
   readonly oId: ObjectId;

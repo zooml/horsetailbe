@@ -31,11 +31,6 @@ export const logError = (msg: string | {[k: string]: any}, res?: Response) => lo
 export const logWarn = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'warn', res);
 export const logInfo = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'info', res);
 export const logDebug = (msg: string | {[k: string]: any}, res?: Response) => log(msg, 'debug', res);
-export const logRes = (res: Response) => {
-  const meta = {status: res.status, ms: Date.now() - res.locals.date};
-  // TODO size
-  logInfo(meta, res);
-}
 
 export const middleware = [
   rTracer.expressMiddleware(),

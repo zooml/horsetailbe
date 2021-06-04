@@ -56,7 +56,7 @@ export interface Doc extends doc.Base {
 };
 
 const schema = new Schema<Doc, mongoose.Model<Doc>>({
-  saId: {type: Schema.Types.ObjectId, ref: SITEACCT_NAME, required: true},
+  saId: {type: SObjectId, ref: async ()=> (await import('./siteacct')).NAME, required: true},
   name: {type: String, required: true, trim: true},
   desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},

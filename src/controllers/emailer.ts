@@ -14,17 +14,17 @@ const mailgun = mailgunFactory({apiKey, domain});
 
 // https://nodemailer.com/message/
 
-var mailOptions = {
+const mailOptions = {
   from: 'you@samples.mailgun.org',
   to: 'mm@samples.mailgun.org',
   subject: 'Test email subject',
   text: 'Test email text',
   html: '<b> Test email text </b>'
 };
- 
+
 export const send = () => {
-    new Composer(mailOptions).compile().build((err, message) => {
-      var dataToSend = {
+    new Composer(mailOptions).compile().build((e, message) => {
+      const dataToSend = {
           to: 'mm@samples.mailgun.org',
           message: message.toString('ascii')
       };

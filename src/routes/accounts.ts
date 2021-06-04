@@ -3,7 +3,6 @@ import modelRoute from '../controllers/modelroute';
 import {DependentError, DupError, RefError, ValueError} from '../common/apperrs';
 import { Doc, Model, catById } from '../models/account';
 import {trimOrUndef} from '../utils/util';
-import {logRes} from '../platform/logger';
 import * as descs from './descs';
 import * as authz from './authz';
 import * as rsc from './rsc';
@@ -76,7 +75,7 @@ const validateNum = async (o: Doc, sumNum?: number) => {
   if (sumNum !== undefined) {
     if (num < sumNum) new ValueError('num', num, `must be greater than summary account ${sumNum}`);
     const [paDigits, paPower] = digitsAndPower(sumNum);
-    if (digits != paDigits) throw new ValueError('num', num, `should have ${paDigits} digits`)
+    if (digits !== paDigits) throw new ValueError('num', num, `should have ${paDigits} digits`)
     const diff = num - sumNum; // must be a prefix
     const [diffDigits,] = digitsAndPower(diff);
     if (paPower < diffDigits) throw new ValueError('num', num, `should have summary account num ${sumNum} as a prefix`)
@@ -88,7 +87,7 @@ const validateNum = async (o: Doc, sumNum?: number) => {
     if (otherAcct) {
       const otherNum = otherAcct.num;
       const [otherDigits,] = digitsAndPower(otherNum);
-      if (digits != otherDigits) throw new ValueError('num', num, `should have ${otherDigits}`)
+      if (digits !== otherDigits) throw new ValueError('num', num, `should have ${otherDigits}`)
     }
   }
 };
@@ -113,27 +112,24 @@ const validate = async (o: Doc) => {
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
-  authz.validate(req, res, SEGMENT);
+  await authz.validate(req, res, SEGMENT);
   // TODO page limit
   const resDocs = await Model.find({oId: res.locals.oId}).sort({num: 1});
-  res.send(resDocs.map(fromDoc));
-  logRes(res);
+  res.json(resDocs.map(fromDoc));
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
-  authz.validate(req, res, SEGMENT);
+  await authz.validate(req, res, SEGMENT);
   const reqDoc = toDoc(req.body, res.locals.uId, res.locals.oId);
   await validate(reqDoc);
   const resDoc =  await reqDoc.save();
-  res.send(fromDoc(resDoc));
-  logRes(res);
+  res.json(fromDoc(resDoc));
 }));
 
-router.patch('/:id', function(req: Request, res: Response) {
-  authz.validate(req, res, SEGMENT, req.params.id);
+router.patch('/:id', modelRoute(async (req: Request, res: Response) => {
+  await authz.validate(req, res, SEGMENT, req.params.id);
 
   // TODO
 
-  res.send({id: req.params.account_id, name: 'Cash'});
-  logRes(res);
-});
+  res.json({id: req.params.account_id, name: 'Cash'});
+}));

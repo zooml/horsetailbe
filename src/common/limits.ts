@@ -49,11 +49,11 @@ export const FIELDS = {
   url: {kind: 'string', name: 'url', min: 0, max: 400,
     regex: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/
   } as StrLimit,
-  
+
   num: {kind: 'number', name: 'num', min: 100, max: 999999, req: true} as NumLimit,
-  
+
   begAt: {kind: 'date', name: 'begAt', dayBeg: true, minToday: true} as DateLimit,
-  
+
   saId: {kind: 'objectid', name: 'saId', req: true} as ObjIdLimit,
   oId: {kind: 'objectid', name: 'oId', req: true} as ObjIdLimit,
 

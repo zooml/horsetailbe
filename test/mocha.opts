@@ -1,0 +1,8 @@
+--require ts-node/register
+--ui tdd
+--launcherScript ../node_modules/mocha-explorer-launcher-scripts/vscode-test
+--autoload false
+--ipcRole server
+--exit true
+--timeout 999999
+"./**/*.test.ts"

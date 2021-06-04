@@ -16,10 +16,11 @@ import * as authz from './routes/authz';
 
 const app = express();
 
-const pathPrefix = '/api/v1/'
+const apiPrefix = '/api/';
+const apiV1Prefix = apiPrefix + 'v1/';
 
 // view engine setup TODO needed?????
-// app.set('views', path.join(__dirname, 'views')); 
+// app.set('views', path.join(__dirname, 'views'));
 // app.set('view engine', 'pug');
 app.enable('trust proxy');
 app.disable('etag');
@@ -35,14 +36,16 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'))
 });
 
-app.use(session.middleware(pathPrefix));
-app.use(authz.preMiddleware(pathPrefix));
-app.use(pathPrefix + sessions.SEGMENT, sessions.router);
-app.use(pathPrefix + users.SEGMENT, users.router);
-app.use(pathPrefix + siteaccts.SEGMENT, siteaccts.router);
-app.use(pathPrefix + orgs.SEGMENT, orgs.router);
-app.use(pathPrefix + accounts.SEGMENT, accounts.router);
-app.use(authz.postMiddleware(pathPrefix));
+app.use(session.middleware(apiV1Prefix));
+app.use(authz.preMiddleware(apiV1Prefix));
+app.use(apiV1Prefix + sessions.SEGMENT, sessions.router);
+app.use(apiV1Prefix + users.SEGMENT, users.router);
+app.use(apiV1Prefix + siteaccts.SEGMENT, siteaccts.router);
+app.use(apiV1Prefix + orgs.SEGMENT, orgs.router);
+app.use(apiV1Prefix + accounts.SEGMENT, accounts.router);
+app.use(apiPrefix, authz.notFound(apiPrefix));
+
+// TODO not found html page, or check for content type?
 
 // error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -50,13 +53,12 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     return next(err);
   }
   if (err instanceof createError.HttpError) { // may be set by express
-    res.status(err.statusCode);
-    res.json({}); // TODO
+    res.status(err.statusCode); // TODO??????
   } else {
     let error = err;
     if (!(err instanceof AppError)) error = new InternalError(err); // not ours so it's unknown
     res.status(error.statusCode);
-    if (error.statusCode != 403) { // don't send details of why forbidden
+    if (error.statusCode !== 403) { // don't send details of why forbidden
       res.json({
         code: error.code,
         message: error.message

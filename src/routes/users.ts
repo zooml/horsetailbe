@@ -7,6 +7,7 @@ import * as siteacct from '../models/siteacct';
 import { FIELDS } from '../common/limits';
 import * as descs from './descs';
 import * as rsc from './rsc';
+import * as authz from './authz';
 
 export const SEGMENT = 'users';
 export const router = express.Router();
@@ -46,19 +47,21 @@ const toValidDoc = async (o: {[k: string]: any}, uId: string) => {
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
+  await authz.validate(req, res, SEGMENT);
   if (req.query.ses) {
     const resDoc = await Model.findById(res.locals.uId);
     if (!resDoc) throw new InternalError({message: `session valid but no user ${res.locals.uId}`})
-    res.send([fromDoc(resDoc)]);
+    res.json([fromDoc(resDoc)]);
   } else {
-    res.send([]); // TODO return all in org?
+    res.json([]); // TODO return all in org?
   }
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
+  await authz.validate(req, res, SEGMENT);
   const reqDoc = await toValidDoc(req.body, res.locals.uId);
   const resDoc =  await reqDoc.save();
-  siteacct.create(res.locals.uId); // TODO move to email confirm
+  siteacct.create(resDoc._id); // TODO move to email confirm
   session.clear(res)
-    .send(fromDoc(resDoc));
+    .json(fromDoc(resDoc));
 }));
