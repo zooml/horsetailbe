@@ -1,4 +1,4 @@
-import mongoose, { Schema, ObjectId } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 import * as doc from './doc';
@@ -9,7 +9,7 @@ export const NAME = 'Siteacct';
 const SObjectId = Schema.Types.ObjectId;
 
 export interface Doc extends doc.Base {
-  uId: ObjectId; // current owner
+  uId: Types.ObjectId; // current owner
   name: string;
   desc: desc.Doc;
 };
@@ -32,7 +32,7 @@ export const Model = mongoose.model(NAME, schema);
 
 export const create = async (uId: string) => await new Model({uId}).save();
 
-export const findIdByUser = async (uId: string): Promise<ObjectId | undefined> => {
+export const findIdByUser = async (uId: string): Promise<Types.ObjectId | undefined> => {
   const o = await Model.findOne({uId: doc.toObjId(uId)}, {_id: 1});
   return o?._id;
 }

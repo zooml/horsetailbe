@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
-import { Doc, Model, USERSTATES_BY_TAG as USER_STATES, encryptPswd } from '../models/user';
+import { Doc, Model, USER_STATES as USER_STATES, encryptPswd } from '../models/user';
 import { InternalError } from '../common/apperrs';
 import * as session from './session';
 import * as siteacct from '../models/siteacct';
@@ -42,6 +42,7 @@ const toDoc = async (o: {[k: string]: any}, uId: string) => new Model({
 
 const toValidDoc = async (o: {[k: string]: any}, uId: string) => {
   const post = {...o};
+  if (!post.desc) post.desc = {};
   rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
   return await toDoc(post, uId);
 };

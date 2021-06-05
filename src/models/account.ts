@@ -1,4 +1,4 @@
-import mongoose, { Schema, ObjectId } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import * as doc from './doc';
 import * as acttgl from './acttgl';
 import * as desc from './desc';
@@ -23,7 +23,7 @@ export const CATEGORIES: {[k: string]: Category} = Object.freeze({
   EXPENSE: {id: 5, tag: 'expense', isCr: false}
 });
 
-export const catById = (id: number): Category | undefined => {
+export const findCatById = (id: number): Category | undefined => {
   for (const cat of Object.values(CATEGORIES)) {
     if (cat.id === id) return cat;
   }
@@ -31,12 +31,12 @@ export const catById = (id: number): Category | undefined => {
 };
 
 export interface Doc extends doc.Base {
-  readonly oId: ObjectId;
+  readonly oId: Types.ObjectId;
   num: number;
   name: string;
   begAt: Date;
   desc: desc.Doc;
-  sumId?: ObjectId;
+  sumId?: Types.ObjectId;
   catId?: number;
   isCr?: boolean;
   clos: {

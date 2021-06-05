@@ -1,5 +1,4 @@
-import mongoose, {Schema, ObjectId } from 'mongoose';
-import { NAME as SITEACCT_NAME } from './siteacct';
+import mongoose, {Schema, Types } from 'mongoose';
 import { NAME as USER_NAME } from './user';
 import * as doc from './doc';
 import * as acttgl from './acttgl';
@@ -21,12 +20,12 @@ export const GENERAL_FUND = {
 
 export type RoleDoc = {
   id: number;
-  uId: ObjectId;
+  uId: Types.ObjectId;
   at: Date;
 };
 
 export type UserDoc = {
-  id: ObjectId;
+  id: Types.ObjectId;
   roles: RoleDoc[];
 };
 
@@ -47,7 +46,7 @@ export type CloseDoc = {
 };
 
 export interface Doc extends doc.Base {
-  saId: ObjectId;
+  saId: Types.ObjectId;
   name: string;
   desc: desc.Doc;
   users: UserDoc[];
@@ -120,4 +119,4 @@ export const findRolesForUser = async (oId: string, uId: string): Promise<number
   return org?.users[0].roles.map(r => r.id) ?? [];
 };
 
-export const countOrgsPerSA = async (saId: ObjectId): Promise<number> => await Model.countDocuments({saId});
+export const countOrgsPerSA = async (saId: Types.ObjectId): Promise<number> => await Model.countDocuments({saId});

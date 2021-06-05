@@ -14,7 +14,7 @@ export type UserState = {
   tag: string
 };
 
-export const USERSTATES_BY_TAG: {[k: string]: UserState} = Object.freeze({
+export const USER_STATES: {[k: string]: UserState} = Object.freeze({
   SIGNED_UP: {id: 1, tag: 'signedup'},
   WAIT_CONF: {id: 2, tag: 'waitconf'},
   ACTIVE: {id: 3, tag: 'active'},
@@ -40,7 +40,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
   st: {type: Number, required: true},
   opts: {},
   desc: { // desc.Doc schema
-    uId: {type: SObjectId, ref: NAME, required: true},
+    uId: {type: SObjectId, ref: NAME, required: false}, // only not required when self registering
     note: {type: String, trim: true},
     id: {type: String, trim: true},
     url: {type: String, trim: true}
@@ -63,6 +63,6 @@ const isMatchingPswd = async (pswd: string, ePswd: string) => await bcrypt.compa
 export const authn = async (email: string, pswd: string): Promise<Doc> => {
   const user = await Model.findOne({email});
   if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
-  if (user.st !== USERSTATES_BY_TAG.ACTIVE.id) throw new UserNotActive();
+  if (user.st !== USER_STATES.ACTIVE.id) throw new UserNotActive();
   return user;
 };

@@ -1,4 +1,4 @@
-import mongoose, { Schema, ObjectId } from 'mongoose';
+import mongoose, { Schema, Types } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 import { NAME as ACCOUNT_NAME } from './account';
@@ -10,13 +10,13 @@ export const NAME = 'TxnDoc';
 const SObjectId = Schema.Types.ObjectId;
 
 export interface Doc extends doc.Base {
-  oId: ObjectId;
+  oId: Types.ObjectId;
   ts: string;
   kind: string;
   desc: desc.Doc;
   begAt?: Date;
   amts: {
-    acId: ObjectId;
+    acId: Types.ObjectId;
     fnId: number;
     amt: number;
   }[],

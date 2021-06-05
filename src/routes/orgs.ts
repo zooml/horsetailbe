@@ -11,7 +11,7 @@ import { InternalError, LimitError } from '../common/apperrs';
 import { FIELDS, RESOURCES } from '../common/limits';
 import { fromDate } from '../common/acctdate';
 import { toObjId } from '../models/doc';
-import { ObjectId } from 'mongoose';
+import { Types } from 'mongoose';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
@@ -97,7 +97,7 @@ const toDoc = (o: {[k: string]: any}, uId: string): Doc => new Model({
   desc: descs.toDoc(o.desc, uId)
 });
 
-const toValidDoc = (o: {[k: string]: any}, uId: string, saId: ObjectId): Doc => {
+const toValidDoc = (o: {[k: string]: any}, uId: string, saId: Types.ObjectId): Doc => {
   const post = {...o, saId}; // TODO always use user's sa for now
   rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
   // TODO when user spec's saId then test exists here

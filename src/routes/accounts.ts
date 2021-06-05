@@ -1,7 +1,7 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
 import {DependentError, DupError, RefError, ValueError} from '../common/apperrs';
-import { Doc, Model, catById } from '../models/account';
+import { Doc, Model, findCatById } from '../models/account';
 import {trimOrUndef} from '../utils/util';
 import * as descs from './descs';
 import * as authz from './authz';
@@ -32,21 +32,21 @@ const toDoc = (o: {[k: string]: any}, uId: string, oId: string): Doc => new Mode
   isCr: o.isCr,
 });
 
-const fromDoc = (o: Doc): {[k: string]: any} => ({
-  id: o._id,
-  oId: o.oId,
-  num: o.num,
-  name: o.name,
-  begAt: o.begAt || o.at,
-  desc: descs.fromDoc(o.desc),
-  sumId: o.sumId,
-  catId: o.catId,
-  isCr: o.isCr,
-  closes: o.clos,
-  actts: o.actts,
-  at: o.at,
-  upAt: o.upAt,
-  v: o.__v
+const fromDoc = (d: Doc): {[k: string]: any} => ({
+  id: d._id,
+  oId: d.oId,
+  num: d.num,
+  name: d.name,
+  begAt: d.begAt || d.at,
+  desc: descs.fromDoc(d.desc),
+  sumId: d.sumId,
+  catId: d.catId,
+  isCr: d.isCr,
+  closes: d.clos,
+  actts: d.actts,
+  at: d.at,
+  upAt: d.upAt,
+  v: d.__v
 });
 
 const digitsAndPower = (n: number): number[] => {
@@ -66,9 +66,8 @@ const digitsAndPower = (n: number): number[] => {
   return [digits, power];
 };
 
-const validateNum = async (o: Doc, sumNum?: number) => {
-
-  const num = o.num;
+const validateNum = async (d: Doc, sumNum?: number) => {
+  const num = d.num;
   if (!num) throw new ValueError('num', num, 'cannot be zero');
   if (num % 1) throw new ValueError('num', num, 'cannot contain fraction');
   const [digits, power] = digitsAndPower(num);
@@ -83,7 +82,7 @@ const validateNum = async (o: Doc, sumNum?: number) => {
     // read 1 general acct "num" only
     if (digits < 3) throw new ValueError('num', num, 'should be at least 3 digits');
     if (power + 1 < digits) throw new ValueError('num', num, 'should be single digit followed by zeros for general accounts');
-    const otherAcct = await Model.findOne({oId: o.oId}, 'num').sort({catId: 1});
+    const otherAcct = await Model.findOne({oId: d.oId}, 'num').sort({catId: 1});
     if (otherAcct) {
       const otherNum = otherAcct.num;
       const [otherDigits,] = digitsAndPower(otherNum);
@@ -92,20 +91,20 @@ const validateNum = async (o: Doc, sumNum?: number) => {
   }
 };
 
-const validate = async (o: Doc) => {
-  if ((o.catId !== undefined && o.sumId !== undefined) ||
-    (o.catId === undefined && o.sumId === undefined)) throw new DependentError('paId', 'catId', true);
-  if (o.sumId) {
-    const sum = await Model.findById(o.sumId);
-    if (!sum) throw new RefError('sumId', 'account', o.sumId);
-    validateNum(o, sum.num);
+const validate = async (d: Doc) => {
+  if ((d.catId !== undefined && d.sumId !== undefined) ||
+    (d.catId === undefined && d.sumId === undefined)) throw new DependentError('paId', 'catId', true);
+  if (d.sumId) {
+    const sum = await Model.findById(d.sumId);
+    if (!sum) throw new RefError('sumId', 'account', d.sumId);
+    validateNum(d, sum.num);
   } else { // general account
-    const cat = catById(o.catId); // o.catId is defined
-    if (!cat) throw new RefError('catId', 'category', o.catId);
-    if (await Model.exists({oId: o.oId, catId: o.catId})) throw new DupError('catId', o.catId);
-    if (o.isCr !== undefined && o.isCr !== cat.isCr) throw new ValueError('isCr', o.isCr, 'must be same as category or not set');
-    delete o.isCr;
-    validateNum(o);
+    const cat = findCatById(d.catId); // o.catId is defined
+    if (!cat) throw new RefError('catId', 'category', d.catId);
+    if (await Model.exists({oId: d.oId, catId: d.catId})) throw new DupError('catId', d.catId);
+    if (d.isCr !== undefined && d.isCr !== cat.isCr) throw new ValueError('isCr', d.isCr, 'must be same as category or not set');
+    delete d.isCr;
+    validateNum(d);
   }
 
   // TODO begAt must be after the last close

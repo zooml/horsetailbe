@@ -45,7 +45,7 @@ app.use(apiV1Prefix + orgs.SEGMENT, orgs.router);
 app.use(apiV1Prefix + accounts.SEGMENT, accounts.router);
 app.use(apiPrefix, authz.notFound(apiPrefix));
 
-// TODO not found html page, or check for content type?
+// TODO not found html page, or check for content type (json vs html)?
 
 // error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -58,7 +58,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     let error = err;
     if (!(err instanceof AppError)) error = new InternalError(err); // not ours so it's unknown
     res.status(error.statusCode);
-    if (error.statusCode !== 403) { // don't send details of why forbidden
+    const cls = Math.floor(error.status / 100);
+    if (error.statusCode !== 403 && cls !== 5) { // don't send details of why
       res.json({
         code: error.code,
         message: error.message

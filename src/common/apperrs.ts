@@ -32,7 +32,7 @@ export class UserError extends AppError {
 
 const formatValue = (v: any): string => {
   // TODO v does not convert correctly if object
-  let s = `${typeof(v) == 'string' ? '"' + v + '"' : '' + v}`;
+  let s = `${typeof(v) == 'string' ? "'" + v + "'" : '' + v}`;
   if (MAX_STR_V_LEN < s.length) {
     s = `${s.slice(0, MAX_STR_V_LEN)}...`;
   }
@@ -59,7 +59,7 @@ export class BadRequest extends UserError {
 }
 export class BadRequestFld extends BadRequest {
   constructor(path: string, reason: string, code: number) {
-    super(`field ${path} ${reason}`, code);
+    super(`field '${path}' ${reason}`, code);
   }
 }
 export class CastError extends BadRequestFld {
