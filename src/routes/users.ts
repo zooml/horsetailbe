@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import modelRoute from '../controllers/modelroute';
-import { Doc, Model, USER_STATES as USER_STATES, encryptPswd } from '../models/user';
+import { Doc, STATES, encryptPswd, CFlds, create, findById } from '../models/user';
 import { InternalError } from '../common/apperrs';
 import * as session from './session';
 import * as siteacct from '../models/siteacct';
@@ -17,51 +17,63 @@ type Get = rsc.GetBase & {
   fName: string;
   lName?: string;
   st: number;
+  opts: {[k: string]: any};
   desc: descs.Get;
 };
 
-const fromDoc = (doc: Doc): Get => ({
-  ...rsc.fromDoc(doc),
-  email: doc.email,
-  fName: doc.fName,
-  lName: doc.lName,
-  st: doc.st,
-  desc: descs.fromDoc(doc.desc),
-});
+const fromDoc = (d: Doc): Get => {
+  const g: Get = {
+    ...rsc.fromDoc(d),
+    email: d.email,
+    fName: d.fName,
+    st: d.st,
+    opts: d.opts,
+    desc: descs.fromDoc(d.desc),
+  };
+  if (d.lName) g.lName = d.lName;
+  return g;
+};
 
 const POST_DEF: rsc.Def = [FIELDS.email, FIELDS.pswd, FIELDS.fName, FIELDS.lName, FIELDS.desc];
 
-const toDoc = async (o: {[k: string]: any}, uId: string) => new Model({
-  email: o.email,
-  ePswd: await encryptPswd(o.pswd),
-  fName: o.fName,
-  lName: o.lName,
-  st: USER_STATES.ACTIVE.id, // TODO user state
-  desc: descs.toDoc(o.desc, uId)
-});
+const toCFlds = async (o: {[k: string]: any}, uId: string): Promise<CFlds> => {
+  const f: CFlds = {
+    email: o.email,
+    ePswd: await encryptPswd(o.pswd),
+    fName: o.fName,
+    st: STATES.ACTIVE.id,
+    opts: {},
+    desc: descs.toFlds(o.desc, uId)
+  };
+  if (o.lName) f.lName = o.lName;
+  return f;
+};
 
-const toValidDoc = async (o: {[k: string]: any}, uId: string) => {
+const toValidCFlds = async (o: {[k: string]: any}, uId: string): Promise<CFlds> => {
   const post = {...o};
   if (!post.desc) post.desc = {};
   rsc.normAndValid(POST_DEF, post, {desc: descs.POST_DEF});
-  return await toDoc(post, uId);
+  return await toCFlds(post, uId);
 };
 
 router.get('/', modelRoute(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
-  if (req.query.ses) {
-    const resDoc = await Model.findById(res.locals.uId);
-    if (!resDoc) throw new InternalError({message: `session valid but no user ${res.locals.uId}`})
-    res.json([fromDoc(resDoc)]);
-  } else {
+  if (res.locals.oId) {
     res.json([]); // TODO return all in org?
+  } else {
+    const resDoc = await findById(res.locals.uId);
+    if (!resDoc) {
+      session.clear(res);
+      throw new InternalError({message: `session valid but no user ${res.locals.uId}`});
+    }
+    res.json([fromDoc(resDoc)]);
   }
 }));
 
 router.post('/', modelRoute(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
-  const reqDoc = await toValidDoc(req.body, res.locals.uId);
-  const resDoc =  await reqDoc.save();
+  const f = await toValidCFlds(req.body, res.locals.uId);
+  const resDoc =  await create(f);
   siteacct.create(resDoc._id); // TODO move to email confirm
   session.clear(res)
     .json(fromDoc(resDoc));

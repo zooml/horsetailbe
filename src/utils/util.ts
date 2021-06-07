@@ -48,8 +48,8 @@ export const parseAndMatchPath = (prefix: string, path: string, ...segs: string[
   return [0, ''];
 };
 
-export const tryCatch = async <T>(f: () => Promise<T>, x?: (e: Error) => void): Promise<T> => {
+export const tryCatch = async <T>(f: () => Promise<T>, hndlErr: (e: Error) => never): Promise<T> => {
   try {
     return await f();
-  } catch (e) {if (x) x(e);}
+  } catch (e) {hndlErr(e);}
 };

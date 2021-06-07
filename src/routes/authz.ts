@@ -22,9 +22,8 @@ const isReadMethod = (req: Request) => { // TODO needed?
   return false;
 };
 
-export const preMiddleware = (pathPrefix: string) => async (req: Request, res: Response, next: NextFunction) => {
-  const oId = (OID_HDR in req.headers) ? req.headers[OID_HDR] : req.query.oId;
-  res.locals.oId = oId;
+export const preMiddleware = () => async (req: Request, res: Response, next: NextFunction) => {
+  res.locals.oId = req.query.oId ?? req.headers[OID_HDR];
   next();
 };
 

@@ -37,7 +37,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use(session.middleware(apiV1Prefix));
-app.use(authz.preMiddleware(apiV1Prefix));
+app.use(authz.preMiddleware());
 app.use(apiV1Prefix + sessions.SEGMENT, sessions.router);
 app.use(apiV1Prefix + users.SEGMENT, users.router);
 app.use(apiV1Prefix + siteaccts.SEGMENT, siteaccts.router);

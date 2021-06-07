@@ -110,7 +110,7 @@ schema
   .index({saId: 1, name: 1}, {unique: true, collation: {locale: 'en', strength: 1}})
   .index({'users.id': 1});
 
-export const Model = mongoose.model(NAME, schema);
+export const Model = mongoose.model<Doc>(NAME, schema);
 
 export const findRolesForUser = async (oId: string, uId: string): Promise<number[]> => {
   const org = await Model.findOne(

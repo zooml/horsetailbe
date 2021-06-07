@@ -35,7 +35,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
       v = o[lim.name];
       if (v === undefined) delete o[lim.name];
     }
-    let vPrev = v;
+    const vPrev = v;
     switch (lim.kind) {
       case 'string':
         v = trimOrUndef(v);
@@ -67,7 +67,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
   }
   // check if any extra keys in input
   const oKeys = Object.keys(o);
-  if (found != oKeys.length) { // extra fld, find out which one
+  if (found !== oKeys.length) { // extra fld, find out which one
     for (const key of oKeys) {
       if (!def.some(df => df.name === key)) throw new ExtraFldsError(key); // TODO does not include path
     }

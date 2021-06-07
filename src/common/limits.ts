@@ -33,6 +33,8 @@ export type ObjLimit = Limit;
 
 export type ArrLimit = Limit;
 
+export const NAME_REGEXP = /^[0-9A-Za-z]+$/;
+
 export const FIELDS = {
   tag: {kind: 'string', name: 'tag', min: 1, max: 12} as StrLimit,
   name: {kind: 'string', name: 'name', min: 1, max: 60} as StrLimit,
@@ -43,8 +45,8 @@ export const FIELDS = {
   pswd: {kind: 'string', name: 'pswd', min: 8, max: 30,
     regex: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/
   } as StrLimit,
-  fName: {kind: 'string', name: 'fName', min: 1, max: 20} as StrLimit,
-  lName: {kind: 'string', name: 'lName', min: 0, max: 40} as StrLimit,
+  fName: {kind: 'string', name: 'fName', min: 1, max: 20, regex: NAME_REGEXP} as StrLimit,
+  lName: {kind: 'string', name: 'lName', min: 0, max: 40, regex: NAME_REGEXP} as StrLimit,
   id: {kind: 'string', name: 'id', min: 0, max: 100} as StrLimit, // external id, note id numberic fields too
   url: {kind: 'string', name: 'url', min: 0, max: 400,
     regex: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/

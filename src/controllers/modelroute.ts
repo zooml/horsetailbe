@@ -1,6 +1,7 @@
 import {Request, Response, NextFunction} from 'express';
-import { AppError, CastError, DupError } from '../common/apperrs';
+import { AppError, CastError, DbValidationError, DupError } from '../common/apperrs';
 
+// https://medium.com/@SigniorGratiano/express-error-handling-674bfdd86139
 const decodeErr = (err: any) => {
   let error = err;
   if (!(err instanceof AppError)) {
@@ -8,18 +9,15 @@ const decodeErr = (err: any) => {
       error = new CastError(err.path, err.value);
     } else if (err.name === 'MongoError') {
       if (err.code === 11000) {
+        // message: E11000 duplicate key error dup key: { : "a@b.co" }
         const m = err.message.match(/\{\s*:\s*(.*?)\s*\}/);
         error = new DupError('<index>', m ? m[1].replace(/"/g, '') : '<unknown>');
       }
+    } else if (err.name === 'ValidationError') {
+      // we should have caught these already
+      const msgs = Object.values(err.errors).map((e: Error) => e.message);
+      error = new DbValidationError(msgs);
     }
-
-    // MongoError
-    // message: E11000 duplicate key error dup key: { : "a@b.co" }
-    // code: 11000
-    // err.errmsg.match(/(["'])(?:(?=(\\?))\2.)*?\1/)[0];
-
-    // TODO other db handlers from https://medium.com/@SigniorGratiano/express-error-handling-674bfdd86139
-
   }
   return error;
 };

@@ -37,7 +37,7 @@ export class UserNotActive extends AuthnError {
   }
 }
 
-const formatUrlPath = (path: string): string => path.length <= 1 ? '(root)' : path;
+const formatUrlPath = (path: string): string => path.length <= 1 ? '<root>' : path;
 
 export const FORBIDDEN_ERROR = 1301;
 export class ForbiddenError extends UserError {

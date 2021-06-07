@@ -72,7 +72,7 @@ const validateNum = async (d: Doc, sumNum?: number) => {
   if (num % 1) throw new ValueError('num', num, 'cannot contain fraction');
   const [digits, power] = digitsAndPower(num);
   if (sumNum !== undefined) {
-    if (num < sumNum) new ValueError('num', num, `must be greater than summary account ${sumNum}`);
+    if (num < sumNum) throw new ValueError('num', num, `must be greater than summary account ${sumNum}`);
     const [paDigits, paPower] = digitsAndPower(sumNum);
     if (digits !== paDigits) throw new ValueError('num', num, `should have ${paDigits} digits`)
     const diff = num - sumNum; // must be a prefix

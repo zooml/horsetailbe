@@ -51,6 +51,7 @@ export const FMT_ERROR = 1109;
 export const EXTRA_FLDS_ERROR = 1110;
 export const DAY_BEG_ERROR = 1111;
 export const LIMIT_ERROR = 1112;
+export const DB_VALIDATION_ERROR = 1113;
 
 export class BadRequest extends UserError {
   constructor(message: string, code: number) {
@@ -59,7 +60,7 @@ export class BadRequest extends UserError {
 }
 export class BadRequestFld extends BadRequest {
   constructor(path: string, reason: string, code: number) {
-    super(`field '${path}' ${reason}`, code);
+    super(`field ${path.charAt(0) === '<' ? path : "'" + path + "'"} ${reason}`, code);
   }
 }
 export class CastError extends BadRequestFld {
@@ -125,3 +126,9 @@ export class LimitError extends BadRequest {
     super(`${lim} exceeds max of ${max}`, LIMIT_ERROR);
   }
 }
+export class DbValidationError extends BadRequest {
+  constructor(msgs: string[]) {
+    super(`validation errors: ${msgs.join(', ')}`, DB_VALIDATION_ERROR);
+  }
+}
+
