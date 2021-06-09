@@ -56,14 +56,14 @@ describe('users integration test', () => {
         res.body.code.should.equal(1107);
         done();});
 	})
-	it('should reject extra fld', done => {
-    chai.request(server).post(PATH)
-      .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'hi', x: 'x'})
-      .end((_err, res) => {
-        res.should.have.status(400);
-        res.body.code.should.equal(1110);
-        done();});
-	})
+	// it('should reject extra fld', done => {
+  //   chai.request(server).post(PATH)
+  //     .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'hi', x: 'x'})
+  //     .end((_err, res) => {
+  //       res.should.have.status(400);
+  //       res.body.code.should.equal(1110);
+  //       done();});
+	// })
 	it('should accept', done => {
     const fName = '    aaaaaaaaaaaaaaaaaaab   ';
     chai.request(server).post(PATH)

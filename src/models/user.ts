@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import { trimOrUndef, tryCatch } from '../utils/util';
+import { trimOrUndef } from '../utils/util';
 import * as doc from './doc';
 import * as desc from './desc';
 import bcrypt from 'bcrypt';
@@ -10,8 +10,8 @@ export const NAME = 'User';
 const SObjectId = Schema.Types.ObjectId;
 
 export type State = {
-  id: number,
-  tag: string
+  readonly id: number,
+  readonly tag: string
 };
 
 export const STATES: {[k: string]: State} = Object.freeze({
@@ -28,18 +28,13 @@ export type CFlds = {
   fName: string;
   lName?: string;
   st: number;
-  opts: {};
-  desc: desc.Doc;
+  readonly opts: {};
+  readonly desc: desc.Flds;
 };
 
-export type DBase = {
-  readonly at: Date;
-  readonly upAt: Date;
-};
+export type Flds = doc.Flds & CFlds;
 
-export type Flds = CFlds & DBase;
-
-export type Doc = mongoose.EnforceDocument<Flds, {}>;
+export type Doc = doc.Doc & Flds;
 
 // export function model<T>(name: string, schema?: Schema<any>, collection?: string, skipInit?: boolean): Model<T>;
 // export function model<T, U extends Model<T, TQueryHelpers, any>, TQueryHelpers = {}>(
@@ -95,14 +90,13 @@ export const encryptPswd = async (pswd: string) => {
 
 const isMatchingPswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
 
-export const authn = async (email: string, pswd: string): Promise<Doc> => 
-  await doc.op(async () => {
-    const user = await model.findOne({email});
-    if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
-    if (user.st !== STATES.ACTIVE.id) throw new UserNotActive();
-    return user;
-  });
+export const authn = async (email: string, pswd: string) => await doc.op(async () => {
+  const user = await model.findOne({email});
+  if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
+  if (user.st !== STATES.ACTIVE.id) throw new UserNotActive();
+  return user;
+});
 
-export const create = async (flds: CFlds): Promise<Doc> => await doc.op(async () => new model(flds).save());
+export const create = async (flds: CFlds): Promise<Doc | undefined> => doc.op(async () => new model(flds).save());
 
-export const findById = async (id: string) => await doc.op(async () => model.findById(id));
+export const findById = async (id: doc.ObjId) => doc.op(async () => model.findById(id));

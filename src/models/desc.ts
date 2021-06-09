@@ -1,14 +1,7 @@
-import { Types } from 'mongoose';
-
-export type Doc = {
-  readonly uId?: Types.ObjectId; // creating user (not set if self-registered)
-  note?: string;
-  id?: string; // external ref id
-  url?: string; // external ref
-};
+import * as doc from './doc';
 
 export type Flds = {
-  readonly uId?: Types.ObjectId; // creating user (not set if self-registered)
+  readonly uId?: doc.ObjId; // creating user (not set if self-registered)
   note?: string;
   id?: string; // external ref id
   url?: string; // external ref

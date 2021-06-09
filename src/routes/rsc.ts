@@ -1,12 +1,12 @@
 import * as doc from '../models/doc';
 import { fromDate, toDate } from '../common/acctdate';
-import { isObj, isStr, validDate, validNum, validStr } from '../common/validators';
-import { CastError, ExtraFldsError, InternalError, MissingError } from '../common/apperrs';
-import { DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
+import { isObj, isStr, toBool, validBool, validDate, validNum, validStr } from '../common/validators';
+import { CastError, ExtraFldsError, InternalError, MaxError, MinError, MissingError } from '../common/apperrs';
+import { ArrLimit, BoolLimit, DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
 import { trimOrUndef } from '../utils/util';
 import { Types } from 'mongoose';
 
-export type GetBase = {
+export type Get = {
   id: string;
   at: number;
   upAt: number;
@@ -15,7 +15,7 @@ export type GetBase = {
 
 export type Def = Limit[];
 
-export const normAndValidObjId = (lim: ObjIdLimit, v: any): Types.ObjectId | undefined => {
+export const normAndValidObjId = (lim: ObjIdLimit, v: any): doc.ObjId | undefined => {
   if (v === undefined || (typeof v === 'string' && !v)) {
     if (!lim.req) return undefined;
     throw new MissingError(lim.name);
@@ -24,6 +24,17 @@ export const normAndValidObjId = (lim: ObjIdLimit, v: any): Types.ObjectId | und
   if (!isStr(v)) throw new CastError(lim.name, v);
   return doc.toObjId(v); // TODO test does this throw on bad format?????????
 };
+
+const validArray = (lim: ArrLimit, v: any): boolean => {
+  if (v === undefined) {
+    if (!lim.req) return true;
+    throw new MissingError(lim.name);
+  }
+  if (!Array.isArray(v)) throw new CastError(lim.name, v)
+  if (lim.min && v.length < lim.min) throw new MinError(lim.name, lim.min);
+  if (lim.max < v.length) throw new MaxError(lim.name, lim.max);
+  return true;
+}
 
 export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}, path?: string) => {
   if (!o) throw new MissingError(path ?? ''); // TODO implies all subs are required
@@ -44,6 +55,10 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
       case 'number':
         validNum(lim as NumLimit, true, v);
         break;
+      case 'boolean':
+        validBool(lim as BoolLimit, true, v);
+        v = toBool(v);
+        break;
       case 'date':
         v = toDate(v);
         validDate(lim as DateLimit, true, v);
@@ -51,7 +66,10 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
       case 'objectid':
         v = normAndValidObjId(lim as ObjIdLimit, v);
         break;
-      case 'object':
+        case 'array':
+          validArray(lim as ArrLimit, v);
+          break;
+        case 'object':
         const subDef = subDefs ? subDefs[lim.name] : undefined;
         if (!subDef) throw new InternalError({message: `unknown subobject limit ${lim.name}`});
         normAndValidObj(subDef, v, subDefs, lim.name);
@@ -76,7 +94,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
 
 export const normAndValid = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}) => normAndValidObj(def, o, subDefs);
 
-export const fromDoc = (d: doc.Base): GetBase => ({
+export const fromDoc = (d: doc.Doc): Get => ({
   id: d._id.toString(),
   at: fromDate(d.at),
   upAt: fromDate(d.upAt),

@@ -1,6 +1,6 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import * as doc from './doc';
-import * as acttgl from './acttgl';
+import * as actt from './actt';
 import * as desc from './desc';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
@@ -9,45 +9,35 @@ export const NAME = 'Account';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export type Category = {
-  id: number;
-  tag: string;
-  isCr: boolean;
-};
+export type CloseFlds = {
+  readonly id: number;
+  readonly fnId: number;
+  readonly bal: number;
+}
 
-export const CATEGORIES: {[k: string]: Category} = Object.freeze({
-  ASSET: {id: 1, tag: 'asset', isCr: false},
-  LIABILITY: {id: 2, tag: 'liability', isCr: true},
-  EQUITY: {id: 3, tag: 'equity', isCr: true},
-  INCOME: {id: 4, tag: 'income', isCr: true},
-  EXPENSE: {id: 5, tag: 'expense', isCr: false}
-});
-
-export const findCatById = (id: number): Category | undefined => {
-  for (const cat of Object.values(CATEGORIES)) {
-    if (cat.id === id) return cat;
-  }
-  return undefined;
-};
-
-export interface Doc extends doc.Base {
-  readonly oId: Types.ObjectId;
+export type CFlds = { // create fields
+  readonly oId: doc.ObjId;
   num: number;
   name: string;
   begAt: Date;
-  desc: desc.Doc;
-  sumId?: Types.ObjectId;
+  readonly desc: desc.Flds;
+  sumId?: doc.ObjId;
   catId?: number;
   isCr?: boolean;
-  clos: {
-    id: number;
-    fnId: number;
-    bal: number;
-  }[],
-  actts: acttgl.Doc[]
+  readonly clos: CloseFlds[];
+  readonly actts: actt.Flds[];
 };
 
-const schema = new Schema<Doc, mongoose.Model<Doc>>({
+export type FFlds = { // filter fields
+  oId?: doc.ObjId;
+  catId?: number;
+};
+
+export type Flds = doc.Flds & CFlds;
+
+export type Doc = doc.Doc & Flds;
+
+const schema = new Schema<Flds, mongoose.Model<Flds>>({
   oId: {type: SObjectId, ref: ORG_NAME, required: true}, // org
   num: {type: Number, required: true},
   name: {type: String, required: true, trim: true},
@@ -66,7 +56,7 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
     fnId: {type: Number, required: true},
     bal: {type: Number, required: true}
   }],
-  actts: [{ // acttgl.Doc schema
+  actts: [{ // actt.Doc schema
     at: {type: Date, required: true},
     isAct: {type: Boolean, required: true},
     desc: { // desc.Doc schema
@@ -83,4 +73,20 @@ schema
   .index({oId: 1, name: 1}, {unique: true, collation: {locale: 'en', strength: 1}})
   .index({oId: 1, catId: 1}, {sparse: true});
 
-export const Model = mongoose.model(NAME, schema);
+const model = mongoose.model<Flds>(NAME, schema);
+
+export const create = async (f: CFlds) => doc.op(async () => new model(f).save());
+
+export const findById = async (id: doc.ObjId, p?: {[k: string]: number}) => doc.op(async () => model.findById(id, p));
+
+export const findByOrg = async (oId: doc.ObjId) => doc.op(async () => model.find({oId}).sort({num: 1}));
+
+export const exists = async (f: FFlds) => doc.op(async () => model.exists(f));
+
+export const findOneGANum = async (oId: doc.ObjId): Promise<number | undefined> => doc.op(async () => {
+  const d = await model.findOne({oId}, 'num').sort({catId: 1});
+  return d?.num;
+});
+
+export const countPerOrg = async (oId: doc.ObjId) => doc.op(async () =>
+  model.countDocuments({oId}));

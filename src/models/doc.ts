@@ -1,13 +1,17 @@
-import mongoose from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { AppError, CastError, DupError, DbValidationError } from '../common/apperrs';
 import { tryCatch } from '../utils/util';
 
-export interface Base extends mongoose.Document {
+export type ObjId = Types.ObjectId;
+
+export const toObjId = (id: string): ObjId => Types.ObjectId(id);
+
+export type Flds = {
   readonly at: Date;
   readonly upAt: Date;
 };
 
-export const toObjId = (id: string) => mongoose.Types.ObjectId(id);
+export type Doc = Flds & Document<ObjId>;
 
 // https://medium.com/@SigniorGratiano/express-error-handling-674bfdd86139
 const hndlErr = (err: any): never => {
@@ -26,6 +30,7 @@ const hndlErr = (err: any): never => {
       const msgs = Object.values(err.errors).map((e: Error) => e.message);
       error = new DbValidationError(msgs);
     }
+    // TODO any other errors? connection?
   }
   throw error;
 };

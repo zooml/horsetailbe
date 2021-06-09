@@ -42,12 +42,15 @@ export const validate = async (req: Request, res: Response, rsc: string, rscId?:
     // no perms required for creating/deleting sessions
     allowed = true;
   } else {
-    const roles = await findRolesForUser(oId, uId);
-
+    const rs = roles ?? await findRolesForUser(oId, uId);
+    res.locals.roles = rs;
     switch (rsc) {
       case users.SEGMENT:
+        // no current method restrictions
+        allowed = true;
         break;
       case orgs.SEGMENT:
+        
         break;
       case siteaccts.SEGMENT:
         break;

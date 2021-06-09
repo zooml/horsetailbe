@@ -2,8 +2,11 @@
 
 // TODO dates
 
-// note cannot determine today since it depends on timezone
+// note cannot determine today since it depends on timezone???
 export const today = () => new Date(); // TODO fix this to start at day begin UTC
+
+// TODO fix beg of day!!!!!!!
+export const begOfDay = (d: Date) => d;
 
 export const toDate = (v: any): any => {
   if (!v || typeof v !== 'number') return v;

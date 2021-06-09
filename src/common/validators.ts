@@ -1,5 +1,5 @@
 import { CastError, DayBegError, FmtError, MaxError, MinError, MissingError } from "./apperrs";
-import { DateLimit, NumLimit, StrLimit } from "./limits";
+import { BoolLimit, DateLimit, NumLimit, StrLimit } from "./limits";
 import * as acctdate from './acctdate';
 
 export const isStr = (v: any) => typeof v === 'string';
@@ -49,6 +49,26 @@ export const validNum = (lim: NumLimit, thro: boolean, v: any) => {
   }
   if (lim.max < v) {
     if (thro) throw new MaxError(lim.name, lim.max);
+    return false;
+  }
+  return true;
+};
+
+export const toBool = (v: any): boolean | undefined => {
+  if (v === undefined) return undefined;
+  if (typeof v === 'boolean') return v;
+  if (isNum(v)) return v === 0 ? false : (v === 1 ? true : undefined);
+  return undefined;
+};
+
+export const validBool = (lim: BoolLimit, thro: boolean, v: any) => {
+  if (v === undefined) {
+    if (!lim.req) return true;
+    if (thro) throw new MissingError(lim.name);
+    return false;
+  }
+  if (toBool(v) === undefined) {
+    if (thro) throw new CastError(lim.name, v);
     return false;
   }
   return true;

@@ -1,53 +1,78 @@
 import express, {Request, Response} from 'express';
-import modelRoute from '../controllers/modelroute';
-import {DependentError, DupError, RefError, ValueError} from '../common/apperrs';
-import { Doc, Model, findCatById } from '../models/account';
-import {trimOrUndef} from '../utils/util';
+import ctchEx from '../controllers/ctchex';
+import {DependentError, DupError, LimitError, RefError, ValueError} from '../common/apperrs';
+import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg, findByOrg, create } from '../models/account';
+import { findAcctCatById } from '../common/acctcat';
 import * as descs from './descs';
+import * as actts from './actts';
 import * as authz from './authz';
 import * as rsc from './rsc';
-import { FIELDS } from '../common/limits';
+import { FIELDS, RESOURCES } from '../common/limits';
+import * as doc from '../models/doc';
+import { fromDate } from '../common/acctdate';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
 
-type Get = rsc.GetBase & {
+type CloseGet = {
+  id: number;
+  fnId: number;
+  bal: number;
+};
+
+const fromCloseFlds = (f: CloseFlds): CloseGet => ({
+  id: f.id,
+  fnId: f.fnId,
+  bal: f.bal
+});
+
+type Get = rsc.Get & {
   oId: string;
   num: number;
   name: string;
-  begAt?: number;
+  begAt: number;
   desc: descs.Get;
+  sumId?: string;
+  catId?: number;
+  isCr?: boolean;
+  clos: CloseGet[];
+  actts: actts.Get[];
 };
 
-const POST_DEF: rsc.Def = [FIELDS.oId, FIELDS.num, FIELDS.name, FIELDS.begAt, FIELDS.desc];
+const fromDoc = (d: Doc): Get => {
+  const g: Get = {
+    ...rsc.fromDoc(d),
+    oId: d.oId.toString(),
+    num: d.num,
+    name: d.name,
+    begAt: fromDate(d.begAt),
+    desc: descs.fromFlds(d.desc),
+    clos: d.clos.map(fromCloseFlds),
+    actts: d.actts.map(actts.fromDoc),
+  };
+  if (d.sumId) g.sumId = d.sumId.toString();
+  if (d.catId) g.catId = d.catId;
+  if (d.isCr) g.isCr = d.isCr;
+  return g;
+};
 
-const toDoc = (o: {[k: string]: any}, uId: string, oId: string): Doc => new Model({
-  oId,
-  num: o.num,
-  name: trimOrUndef(o.name),
-  begAt: o.begAt,
-  desc: descs.toDoc(o.desc, uId),
-  sumId: trimOrUndef(o.sumId),
-  catId: o.catId,
-  isCr: o.isCr,
-});
+const POST_DEF: rsc.Def = [FIELDS.oId, FIELDS.num, FIELDS.name, FIELDS.begAt, FIELDS.desc, FIELDS.sumId, FIELDS.catId, FIELDS.isCr];
 
-const fromDoc = (d: Doc): {[k: string]: any} => ({
-  id: d._id,
-  oId: d.oId,
-  num: d.num,
-  name: d.name,
-  begAt: d.begAt || d.at,
-  desc: descs.fromDoc(d.desc),
-  sumId: d.sumId,
-  catId: d.catId,
-  isCr: d.isCr,
-  closes: d.clos,
-  actts: d.actts,
-  at: d.at,
-  upAt: d.upAt,
-  v: d.__v
-});
+const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds => {
+  const f: CFlds = {
+    oId,
+    num: o.num,
+    name: o.name,
+    begAt: o.begAt,
+    desc: descs.toFlds(o.desc, uId),
+    clos: [],
+    actts: []
+  };
+  if (o.sumId) f.sumId = doc.toObjId(o.sumId);
+  if (o.catId) f.catId = o.catId;
+  if (o.isCr !== undefined) f.isCr = o.isCr;
+  return f;
+};
 
 const digitsAndPower = (n: number): number[] => {
   let digits = 1;
@@ -66,8 +91,8 @@ const digitsAndPower = (n: number): number[] => {
   return [digits, power];
 };
 
-const validateNum = async (d: Doc, sumNum?: number) => {
-  const num = d.num;
+const validateNum = async (f: CFlds, sumNum?: number) => {
+  const num = f.num;
   if (!num) throw new ValueError('num', num, 'cannot be zero');
   if (num % 1) throw new ValueError('num', num, 'cannot contain fraction');
   const [digits, power] = digitsAndPower(num);
@@ -79,53 +104,68 @@ const validateNum = async (d: Doc, sumNum?: number) => {
     const [diffDigits,] = digitsAndPower(diff);
     if (paPower < diffDigits) throw new ValueError('num', num, `should have summary account num ${sumNum} as a prefix`)
   } else { // general account
-    // read 1 general acct "num" only
-    if (digits < 3) throw new ValueError('num', num, 'should be at least 3 digits');
+    // done already: if (digits < 3) throw new ValueError('num', num, 'should be at least 3 digits');
     if (power + 1 < digits) throw new ValueError('num', num, 'should be single digit followed by zeros for general accounts');
-    const otherAcct = await Model.findOne({oId: d.oId}, 'num').sort({catId: 1});
-    if (otherAcct) {
-      const otherNum = otherAcct.num;
+    // read 1 general acct "num" only
+    const otherNum = await findOneGANum(f.oId);
+    if (otherNum) {
       const [otherDigits,] = digitsAndPower(otherNum);
       if (digits !== otherDigits) throw new ValueError('num', num, `should have ${otherDigits}`)
     }
   }
 };
 
-const validate = async (d: Doc) => {
-  if ((d.catId !== undefined && d.sumId !== undefined) ||
-    (d.catId === undefined && d.sumId === undefined)) throw new DependentError('paId', 'catId', true);
-  if (d.sumId) {
-    const sum = await Model.findById(d.sumId);
-    if (!sum) throw new RefError('sumId', 'account', d.sumId);
-    validateNum(d, sum.num);
+const validate = async (f: CFlds) => {
+  if ((f.catId !== undefined && f.sumId !== undefined) ||
+    (f.catId === undefined && f.sumId === undefined)) throw new DependentError('paId', 'catId', true);
+  if (f.sumId) { // non-general account
+    const sum = await findById(f.sumId, {num: 1});
+    if (!sum) throw new RefError('sumId', 'account', f.sumId);
+    validateNum(f, sum.num);
   } else { // general account
-    const cat = findCatById(d.catId); // o.catId is defined
-    if (!cat) throw new RefError('catId', 'category', d.catId);
-    if (await Model.exists({oId: d.oId, catId: d.catId})) throw new DupError('catId', d.catId);
-    if (d.isCr !== undefined && d.isCr !== cat.isCr) throw new ValueError('isCr', d.isCr, 'must be same as category or not set');
-    delete d.isCr;
-    validateNum(d);
+    const cat = findAcctCatById(f.catId); // f.catId is defined
+    if (!cat) throw new RefError('catId', 'category', f.catId);
+    if (await exists({oId: f.oId, catId: f.catId})) throw new DupError('catId', f.catId);
+    if (f.isCr !== undefined && f.isCr !== cat.isCr) throw new ValueError('isCr', f.isCr, 'must be same as category or not set');
+    delete f.isCr;
+    validateNum(f);
   }
 
-  // TODO begAt must be after the last close
+  // TODO begAt must be at or after the last close
 };
 
-router.get('/', modelRoute(async (req: Request, res: Response) => {
+const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId) => {
+  const f = toCFlds(o, uId, oId);
+  rsc.normAndValid(POST_DEF, f, {desc: descs.POST_DEF});
+  await validate(f);
+  return f;
+};
+
+const validPostLimits = async (f: CFlds) => {
+  const forOrg = await countPerOrg(f.oId);
+  const max = RESOURCES.accounts.perOrg.max;
+  if (max <= forOrg) throw new LimitError('accounts per organization', max);
+};
+
+router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   // TODO page limit
-  const resDocs = await Model.find({oId: res.locals.oId}).sort({num: 1});
+  const oId = doc.toObjId(res.locals.oId);
+  const resDocs = await findByOrg(oId);
   res.json(resDocs.map(fromDoc));
 }));
 
-router.post('/', modelRoute(async (req: Request, res: Response) => {
+router.post('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
-  const reqDoc = toDoc(req.body, res.locals.uId, res.locals.oId);
-  await validate(reqDoc);
-  const resDoc =  await reqDoc.save();
+  const uId = doc.toObjId(res.locals.uId);
+  const oId = doc.toObjId(res.locals.oId);
+  const f = await toValidCFlds(req.body, uId, oId);
+  await validPostLimits(f);
+  const resDoc =  await create(f);
   res.json(fromDoc(resDoc));
 }));
 
-router.patch('/:id', modelRoute(async (req: Request, res: Response) => {
+router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT, req.params.id);
 
   // TODO

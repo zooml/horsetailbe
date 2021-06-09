@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 import { NAME as ACCOUNT_NAME } from './account';
@@ -9,21 +9,25 @@ export const NAME = 'TxnDoc';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export interface Doc extends doc.Base {
-  oId: Types.ObjectId;
+export type CFlds = {
+  oId: doc.ObjId;
   ts: string;
   kind: string;
-  desc: desc.Doc;
+  desc: desc.Flds;
   begAt?: Date;
   amts: {
-    acId: Types.ObjectId;
+    acId: doc.ObjId;
     fnId: number;
     amt: number;
   }[],
   dueAt?: Date;
 };
 
-const schema = new Schema<Doc, mongoose.Model<Doc>>({
+export type Flds = doc.Flds & CFlds;
+
+export type Doc = doc.Doc & Flds;
+
+const schema = new Schema<Flds, mongoose.Model<Flds>>({
   oId: {type: SObjectId, ref: ORG_NAME, required: true},
   ts: {type: String, required: true, trim: true}, // timestamp, e.g. 20210324231845012-s8v3x
   kind: {type: String, required: true, trim: true}, // TODO

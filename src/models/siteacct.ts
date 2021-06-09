@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import { NAME as ORG_NAME } from './org';
 import { NAME as USER_NAME } from './user';
 import * as doc from './doc';
@@ -8,13 +8,17 @@ export const NAME = 'Siteacct';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export interface Doc extends doc.Base {
-  uId: Types.ObjectId; // current owner
+export type CFlds = {
+  uId: doc.ObjId; // current owner
   name: string;
-  desc: desc.Doc;
+  desc: desc.Flds;
 };
 
-const schema = new Schema<Doc, mongoose.Model<Doc>>({
+export type Flds = doc.Flds & CFlds;
+
+export type Doc = doc.Doc & Flds;
+
+const schema = new Schema<Flds, mongoose.Model<Flds>>({
   uId: {type: SObjectId, ref: USER_NAME, required: true},
   oIds: [{type: SObjectId, ref: ORG_NAME}],
   name: {type: String, required: true, trim: true},
@@ -28,11 +32,11 @@ const schema = new Schema<Doc, mongoose.Model<Doc>>({
 
 schema.index({uId: 1}, {unique: true});
 
-export const Model = mongoose.model(NAME, schema);
+const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (uId: string) => await new Model({uId}).save();
+export const create = async (f: CFlds) => doc.op(async () => new model(f).save());
 
-export const findIdByUser = async (uId: string): Promise<Types.ObjectId | undefined> => {
-  const o = await Model.findOne({uId: doc.toObjId(uId)}, {_id: 1});
-  return o?._id;
-}
+export const findIdByUser = async (uId: doc.ObjId): Promise<doc.ObjId | undefined> => doc.op(async () => {
+  const d = await model.findOne({uId}, {_id: 1});
+  return d?._id;
+});

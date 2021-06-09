@@ -1,27 +1,24 @@
 import express, { Request, Response } from 'express';
 import * as session from './session';
 import { MissingError } from '../common/apperrs';
-import modelRoute from '../controllers/modelroute';
-import { authn as authnUser } from '../models/user';
-import * as authz from './authz';
+import * as user from '../models/user';
+import ctchEx from '../controllers/ctchex';
 
 export const SEGMENT = 'sessions';
 export const router = express.Router();
 
-router.post('/', modelRoute(async (req: Request, res: Response) => {
+router.post('/', ctchEx(async (req: Request, res: Response) => {
   // no need to authz.validate, this is authn
   const ses = req.body;
   if (!ses.email) throw new MissingError('email');
   if (!ses.pswd) throw new MissingError('pswd');
-  const user = await authnUser(ses.email, ses.pswd);
-  session.set(req, res, user._id)
-    .status(204)
-    .json();
+  const u = await user.authn(ses.email, ses.pswd);
+  session.set(req, res, u._id)
+    .status(204);
 }));
 
-router.delete('/', modelRoute(async (req: Request, res: Response) => {
+router.delete('/', ctchEx(async (req: Request, res: Response) => {
   // no need to authz.validate, this is authn
   session.clear(res)
-    .status(204)
-    .json();
+    .status(204);
 }));

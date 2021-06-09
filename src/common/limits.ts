@@ -1,5 +1,6 @@
+import { ACCTCATS } from "./acctcat";
 
-export type LimitKind = 'string' | 'number' | 'date' | 'objectid' | 'object' | 'array';
+export type LimitKind = 'string' | 'number' | 'boolean' | 'date' | 'objectid' | 'object' | 'array';
 
 export type Limit = {
   kind: LimitKind;
@@ -19,6 +20,10 @@ export type NumLimit = LimitMinMax & {
   req: boolean;
 };
 
+export type BoolLimit = Limit & {
+  req: boolean;
+};
+
 export type DateLimit = Limit & {
   req: boolean;
   dayBeg?: boolean;
@@ -31,7 +36,9 @@ export type ObjIdLimit = Limit & {
 
 export type ObjLimit = Limit;
 
-export type ArrLimit = Limit;
+export type ArrLimit = LimitMinMax & {
+  req: boolean;
+};
 
 export const NAME_REGEXP = /^[0-9A-Za-z]+$/;
 
@@ -45,6 +52,7 @@ export const FIELDS = {
   pswd: {kind: 'string', name: 'pswd', min: 8, max: 30,
     regex: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/
   } as StrLimit,
+  ePswd: {kind: 'string', name: 'ePswd', min: 8, max: 9999} as StrLimit,
   fName: {kind: 'string', name: 'fName', min: 1, max: 20, regex: NAME_REGEXP} as StrLimit,
   lName: {kind: 'string', name: 'lName', min: 0, max: 40, regex: NAME_REGEXP} as StrLimit,
   id: {kind: 'string', name: 'id', min: 0, max: 100} as StrLimit, // external id, note id numberic fields too
@@ -53,19 +61,26 @@ export const FIELDS = {
   } as StrLimit,
 
   num: {kind: 'number', name: 'num', min: 100, max: 999999, req: true} as NumLimit,
+  catId: {kind: 'number', name: 'catId', min: 1, max: Object.keys(ACCTCATS).length, req: false} as NumLimit,
+  st: {kind: 'number', name: 'st', min: 1, max: 99999, req: true} as NumLimit,
+
+  isCr: {kind: 'boolean', name: 'isCr', req: false} as BoolLimit,
 
   begAt: {kind: 'date', name: 'begAt', dayBeg: true, minToday: true} as DateLimit,
 
+  uId: {kind: 'objectid', name: 'uId', req: false} as ObjIdLimit,
   saId: {kind: 'objectid', name: 'saId', req: true} as ObjIdLimit,
   oId: {kind: 'objectid', name: 'oId', req: true} as ObjIdLimit,
+  sumId: {kind: 'objectid', name: 'sumId', req: false} as ObjIdLimit,
 
   desc: {kind: 'object', name: 'desc'} as ObjLimit,
+  opts: {kind: 'object', name: 'opts'} as ObjLimit,
 
-  actts: {kind: 'array', name: 'actts', max: 5} as ArrLimit, // number of activation toggles
-  clos: {kind: 'array', name: 'clos', max: 120} as ArrLimit, // number of closing entries
-  users: {kind: 'array', name: 'users', max: 3} as ArrLimit, // users/org
-  funds: {kind: 'array', name: 'funds', max: 100} as ArrLimit, // defined funds (act & sus)/org
-  amts: {kind: 'array', name: 'amts', max: 20} as ArrLimit, // amounts/txndoc
+  actts: {kind: 'array', name: 'actts', min: 0, max: 5, req: true} as ArrLimit, // number of activation toggles
+  clos: {kind: 'array', name: 'clos', min: 0, max: 240, req: true} as ArrLimit, // number of closing entries
+  users: {kind: 'array', name: 'users', min: 1, max: 3, req: true} as ArrLimit, // users/org
+  funds: {kind: 'array', name: 'funds', min: 1, max: 100, req: true} as ArrLimit, // defined funds (act & sus)/org
+  amts: {kind: 'array', name: 'amts', min: 2, max: 20, req: true} as ArrLimit, // amounts/txndoc
 };
 
 export const RESOURCES = {
