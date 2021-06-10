@@ -1,5 +1,5 @@
-import {logError, logWarn} from '../platform/logger';
-import { AppError, UserError } from '../common/apperrs';
+/* tslint:disable:max-classes-per-file */
+import { UserError } from '../common/apperrs';
 
 export const CREDENTIALS_ERROR = 1201;
 export const MISSING_OR_UNKN_SESSION = 1202;
@@ -41,8 +41,8 @@ const formatUrlPath = (path: string): string => path.length <= 1 ? '<root>' : pa
 
 export const FORBIDDEN_ERROR = 1301;
 export class ForbiddenError extends UserError {
-  constructor(uId: string, isRead: boolean, rsc: string, rscId?: string, msg?: string) {
-    super(`uId ${uId} forbidden ${isRead ? 'read' : 'write'} on rsc ${rsc}${rscId? '/' + rscId : ''}${msg ? ' (' + msg + ') ' : ''}`,
+  constructor(uId: string | undefined, meth: string, rsc: string, rscId?: string, msg?: string) {
+    super(`uId ${uId ?? '<unknown>'} forbidden ${meth} on ${rsc}${rscId? '/' + rscId : ''}${msg ? ' (' + msg + ') ' : ''}`,
       403, FORBIDDEN_ERROR);
   }
 }

@@ -24,7 +24,7 @@ export const toFlds = (o: {[k: string]: any} | undefined, uId: doc.ObjId | undef
 
 export const fromFlds = (d: desc.Flds): Get => {
   const g: Get = {};
-  if (d.uId) g.uId = d.uId.toString();
+  if (d.uId) g.uId = d.uId.toHexString();
   if (d.note) g.note = d.note;
   if (d.id) g.id = d.id;
   if (d.url) g.url = d.url;

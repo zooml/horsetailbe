@@ -1,22 +1,20 @@
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 chai.use(chaiHttp);
-import server from '../../src/server';
 const should = chai.should();
 const expect = chai.expect;
 import 'mocha';
 import * as db from '../dbutil';
 import * as util from '../util';
+import { svr } from '../hooks';
 
 const PATH = util.PATH_PREFIX + 'users';
 
 describe('users integration test', () => {
-	before(() => db.connect());
-	after(() => db.disconnect());
 	afterEach(() => db.clear());
 
   it('should reject invalid email fmt', done =>  {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'abc', pswd: 'aa11AA..', fName: 'hi'})
       .end((_err, res) => {
         res.should.have.status(400);
@@ -25,7 +23,7 @@ describe('users integration test', () => {
         done();});
 	})
 	it('should reject invalid pswd len', done => {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'a11AA..', fName: 'hi'})
       .end((_err, res) => {
         res.should.have.status(400);
@@ -33,7 +31,7 @@ describe('users integration test', () => {
         done();});
 	})
 	it('should reject invalid pswd fmt', done => {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AABB', fName: 'hi'})
       .end((_err, res) => {
         res.should.have.status(400);
@@ -41,7 +39,7 @@ describe('users integration test', () => {
         done();});
 	})
 	it('should reject missing fName', done => {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.'})
       .end((_err, res) => {
         res.should.have.status(400);
@@ -49,7 +47,7 @@ describe('users integration test', () => {
         done();});
 	})
 	it('should reject long fName', done => {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'aaaaaaaaaaaaaaaaaaabc'})
       .end((_err, res) => {
         res.should.have.status(400);
@@ -57,7 +55,7 @@ describe('users integration test', () => {
         done();});
 	})
 	// it('should reject extra fld', done => {
-  //   chai.request(server).post(PATH)
+  //   svr.post(PATH)
   //     .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'hi', x: 'x'})
   //     .end((_err, res) => {
   //       res.should.have.status(400);
@@ -66,7 +64,7 @@ describe('users integration test', () => {
 	// })
 	it('should accept', done => {
     const fName = '    aaaaaaaaaaaaaaaaaaab   ';
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.', fName})
       .end((_err, res) => {
         res.should.have.status(200);
@@ -82,7 +80,7 @@ describe('users integration test', () => {
         done();});
 	})
 	it('should accept optional lName', done => {
-    chai.request(server).post(PATH)
+    svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'fn', lName: 'lname'})
       .end((_err, res) => {
         res.should.have.status(200);
@@ -100,21 +98,18 @@ describe('users integration test', () => {
 	it('should reject dup', done => {
     const user0 = {email: 'a@b.co', pswd: 'aa11AAB.', fName: 'hi'};
     const user1 = {email: 'a@b.co', pswd: 'aa11AAB;', fName: 'bye'};
-    chai.request(server).post(PATH)
-      .send(user0)
+    svr.post(PATH).send(user0)
       .end((_err, res) => {
         res.should.have.status(200);
-        chai.request(server).post(PATH)
-        .send(user1)
-        .end((_err, res) => {
-          res.should.have.status(400);
-          res.body.code.should.equal(1105);
-          res.body.message.should.be.equal("field <index> value 'a@b.co' is not unique")
-          done();});
-      });
+        svr.post(PATH).send(user1)
+          .end((_err, res) => {
+            res.should.have.status(400);
+            res.body.code.should.equal(1105);
+            res.body.message.should.be.equal("field <index> value 'a@b.co' is not unique")
+            done();});});
   })
-  it('should reject get w/o session', done => {
-    chai.request(server).get(PATH)
+  it('should reject GET w/o session', done => {
+    svr.get(PATH)
       .end((_err, res) => {
         res.should.have.status(401);
         done();});

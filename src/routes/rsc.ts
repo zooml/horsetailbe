@@ -1,6 +1,6 @@
 import * as doc from '../models/doc';
 import { fromDate, toDate } from '../common/acctdate';
-import { isObj, isStr, toBool, validBool, validDate, validNum, validStr } from '../common/validators';
+import { isArr, isObj, isStr, toBool, validBool, validDate, validNum, validStr } from '../common/validators';
 import { CastError, ExtraFldsError, InternalError, MaxError, MinError, MissingError } from '../common/apperrs';
 import { ArrLimit, BoolLimit, DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
 import { trimOrUndef } from '../utils/util';
@@ -22,7 +22,7 @@ export const normAndValidObjId = (lim: ObjIdLimit, v: any): doc.ObjId | undefine
   }
   if (v instanceof Types.ObjectId) return v;
   if (!isStr(v)) throw new CastError(lim.name, v);
-  return doc.toObjId(v); // TODO test does this throw on bad format?????????
+  return doc.toObjId(v, lim.name);
 };
 
 const validArray = (lim: ArrLimit, v: any): boolean => {
@@ -30,7 +30,7 @@ const validArray = (lim: ArrLimit, v: any): boolean => {
     if (!lim.req) return true;
     throw new MissingError(lim.name);
   }
-  if (!Array.isArray(v)) throw new CastError(lim.name, v)
+  if (!isArr(v)) throw new CastError(lim.name, v)
   if (lim.min && v.length < lim.min) throw new MinError(lim.name, lim.min);
   if (lim.max < v.length) throw new MaxError(lim.name, lim.max);
   return true;
@@ -95,7 +95,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
 export const normAndValid = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}) => normAndValidObj(def, o, subDefs);
 
 export const fromDoc = (d: doc.Doc): Get => ({
-  id: d._id.toString(),
+  id: d._id.toHexString(),
   at: fromDate(d.at),
   upAt: fromDate(d.upAt),
   v: d.__v

@@ -13,7 +13,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   if (!ses.email) throw new MissingError('email');
   if (!ses.pswd) throw new MissingError('pswd');
   const u = await user.authn(ses.email, ses.pswd);
-  session.set(req, res, u._id)
+  session.set(req, res, u._id.toHexString())
     .status(204);
 }));
 

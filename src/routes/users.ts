@@ -63,7 +63,7 @@ const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId | undefined): 
 
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
-  const uId = doc.toObjId(res.locals.uId);
+  const uId: doc.ObjId = res.locals.uId;
   if (res.locals.oId) {
     res.json([]); // TODO return all in org, but roles only if user has authz
   } else {
@@ -79,7 +79,7 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
 router.post('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   // res.locals.uId will exist if created for invitation
-  const uId = res.locals.uId ? doc.toObjId(res.locals.uId) : undefined;
+  const uId: doc.ObjId | undefined = res.locals.uId;
   const f = await toValidCFlds(req.body, uId);
   const resDoc =  await create(f);
   await siteaccts.create(resDoc._id, f.fName); // TODO move to email confirm

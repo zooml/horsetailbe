@@ -90,13 +90,17 @@ export const encryptPswd = async (pswd: string) => {
 
 const isMatchingPswd = async (pswd: string, ePswd: string) => await bcrypt.compare(pswd, ePswd);
 
-export const authn = async (email: string, pswd: string) => await doc.op(async () => {
+export const authn = async (email: string, pswd: string): Promise<Doc | undefined> => doc.op(async () => {
   const user = await model.findOne({email});
   if (!user || !await isMatchingPswd(pswd, user.ePswd)) throw new CredentialsError();
   if (user.st !== STATES.ACTIVE.id) throw new UserNotActive();
   return user;
 });
 
-export const create = async (flds: CFlds): Promise<Doc | undefined> => doc.op(async () => new model(flds).save());
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
 
-export const findById = async (id: doc.ObjId) => doc.op(async () => model.findById(id));
+export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.op(async () =>
+  model.findById(id));
+
+export const activeExists = async (id: doc.ObjId): Promise<boolean> => doc.op(async () =>
+  model.exists({_id: id, st: STATES.ACTIVE.id}));

@@ -37,7 +37,6 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 app.use(session.middleware(apiV1Prefix));
-app.use(authz.preMiddleware());
 app.use(apiV1Prefix + sessions.SEGMENT, sessions.router);
 app.use(apiV1Prefix + users.SEGMENT, users.router);
 app.use(apiV1Prefix + siteaccts.SEGMENT, siteaccts.router);
@@ -58,7 +57,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     let error = err;
     if (!(err instanceof AppError)) error = new InternalError(err); // not ours so it's unknown
     res.status(error.statusCode);
-    const cls = Math.floor(error.status / 100);
+    const cls = Math.floor(error.statusCode / 100);
     if (error.statusCode !== 403 && cls !== 5) { // don't send details of why
       res.json({
         code: error.code,

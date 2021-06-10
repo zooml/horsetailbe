@@ -1,10 +1,18 @@
 import { Document, Types } from 'mongoose';
-import { AppError, CastError, DupError, DbValidationError } from '../common/apperrs';
+import { AppError, CastError, DupError, DbValidationError, FmtError } from '../common/apperrs';
 import { tryCatch } from '../utils/util';
 
 export type ObjId = Types.ObjectId;
 
-export const toObjId = (id: string): ObjId => Types.ObjectId(id);
+const regex = /^[0-9a-fA-F]{24}$/;
+export const validObjId = (id: string, name: string) => {
+  if (!id || !regex.test(id)) throw new FmtError(name, '24 hex chars');
+}
+
+export const toObjId = (id: string, name?: string): ObjId => {
+  if (name) validObjId(id, name);
+  return Types.ObjectId(id);
+};
 
 export type Flds = {
   readonly at: Date;

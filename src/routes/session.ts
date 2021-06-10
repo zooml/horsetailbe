@@ -6,6 +6,7 @@ import { parseAndMatchPath } from '../utils/util';
 import { SEGMENT as SESSIONS_SEG } from './sessions';
 import { SEGMENT as USERS_SEG } from './users';
 import { logInfo } from '../platform/logger';
+import * as doc from '../models/doc';
 
 // TODO SECURITY encrypt/decrypt
 const createCookie = (req: Request, uId: string) =>
@@ -23,12 +24,21 @@ const parseCookie = (cookie: string) => {
   };
 };
 
-const validateCookie = (req: Request): string => {
+const validateCookie = (req: Request, nothro?: boolean): string | undefined => {
   const value = req.signedCookies.ses;
-  if (!value) throw new MissingOrUnknSession();
+  if (!value) {
+    if (nothro) return undefined;
+    throw new MissingOrUnknSession();
+  }
   const ses = parseCookie(value);
-  if (ses.ip !== req.ip) throw new SessionIpMismatch();
-  if (ses.exp * 1000 < Date.now()) throw new SessionExpired(); // TODO refresh if within 90% of expiration
+  if (ses.ip !== req.ip) {
+    if (nothro) return undefined;
+    throw new SessionIpMismatch();
+  }
+  if (ses.exp * 1000 < Date.now()) {
+    if (nothro) return undefined;
+    throw new SessionExpired(); // TODO refresh if within 90% of expiration
+  }
   return ses.uId;
 };
 
@@ -37,10 +47,14 @@ export const middleware = (pathPrefix: string) => [
   (req: Request, res: Response, next: NextFunction) => {
     // only /sessions and POST:/users are exempt from valid session (TODO confirm email too)
     const [iRsc,] = parseAndMatchPath(pathPrefix, req.path, SESSIONS_SEG, USERS_SEG);
-    if (!iRsc || (iRsc === 2 && req.method !== 'POST')) {
-      const uId = validateCookie(req);
-      logInfo({uId}, res);
-      res.locals.uId = uId;
+    if (!iRsc || iRsc === 2) {
+      // user POST can either be for self-registration or invitation
+      const isUserPOST = iRsc === 2 && req.method === 'POST';
+      const uId = validateCookie(req, isUserPOST);
+      if (uId) {
+        logInfo({uId}, res);
+        res.locals.uId = doc.toObjId(uId, 'session'); // should be valid
+      }
     }
     next();
   }

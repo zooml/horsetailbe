@@ -34,7 +34,7 @@ schema.index({uId: 1}, {unique: true});
 
 const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (f: CFlds) => doc.op(async () => new model(f).save());
+export const create = async (f: CFlds) => doc.op(async () => model.create(f));
 
 export const findIdByUser = async (uId: doc.ObjId): Promise<doc.ObjId | undefined> => doc.op(async () => {
   const d = await model.findOne({uId}, {_id: 1});

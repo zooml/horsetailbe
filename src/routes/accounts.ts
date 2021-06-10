@@ -42,7 +42,7 @@ type Get = rsc.Get & {
 const fromDoc = (d: Doc): Get => {
   const g: Get = {
     ...rsc.fromDoc(d),
-    oId: d.oId.toString(),
+    oId: d.oId.toHexString(),
     num: d.num,
     name: d.name,
     begAt: fromDate(d.begAt),
@@ -50,7 +50,7 @@ const fromDoc = (d: Doc): Get => {
     clos: d.clos.map(fromCloseFlds),
     actts: d.actts.map(actts.fromDoc),
   };
-  if (d.sumId) g.sumId = d.sumId.toString();
+  if (d.sumId) g.sumId = d.sumId.toHexString();
   if (d.catId) g.catId = d.catId;
   if (d.isCr) g.isCr = d.isCr;
   return g;
@@ -68,7 +68,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds =
     clos: [],
     actts: []
   };
-  if (o.sumId) f.sumId = doc.toObjId(o.sumId);
+  if (o.sumId) f.sumId = doc.toObjId(o.sumId, 'sumId');
   if (o.catId) f.catId = o.catId;
   if (o.isCr !== undefined) f.isCr = o.isCr;
   return f;
@@ -150,15 +150,15 @@ const validPostLimits = async (f: CFlds) => {
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   // TODO page limit
-  const oId = doc.toObjId(res.locals.oId);
+  const oId: doc.ObjId = res.locals.oId;
   const resDocs = await findByOrg(oId);
   res.json(resDocs.map(fromDoc));
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
-  const uId = doc.toObjId(res.locals.uId);
-  const oId = doc.toObjId(res.locals.oId);
+  const uId: doc.ObjId = res.locals.uId;
+  const oId: doc.ObjId = res.locals.oId;
   const f = await toValidCFlds(req.body, uId, oId);
   await validPostLimits(f);
   const resDoc =  await create(f);

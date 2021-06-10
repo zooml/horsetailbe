@@ -15,12 +15,14 @@
         "-u", "bdd",
         "--timeout", "999999",
         "--colors",
+        "--require", "test/hooks.ts"
       ],
       "internalConsoleOptions": "openOnSessionStart",
       "name": "Mocha Tests",
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
       "skipFiles": [
-        "<node_internals>/**"
+        "<node_internals>/**",
+        "test/hooks.ts"
       ],
       "outputCapture": "std",
       "env": {

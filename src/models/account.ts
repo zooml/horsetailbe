@@ -75,18 +75,21 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (f: CFlds) => doc.op(async () => new model(f).save());
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
 
-export const findById = async (id: doc.ObjId, p?: {[k: string]: number}) => doc.op(async () => model.findById(id, p));
+export const findById = async (id: doc.ObjId, p?: {[k: string]: number}): Promise<Doc | undefined> => doc.op(async () =>
+  model.findById(id, p));
 
-export const findByOrg = async (oId: doc.ObjId) => doc.op(async () => model.find({oId}).sort({num: 1}));
+export const findByOrg = async (oId: doc.ObjId): Promise<Doc[]> => doc.op(async () =>
+  model.find({oId}).sort({num: 1}));
 
-export const exists = async (f: FFlds) => doc.op(async () => model.exists(f));
+export const exists = async (f: FFlds): Promise<boolean> => doc.op(async () =>
+  model.exists(f));
 
 export const findOneGANum = async (oId: doc.ObjId): Promise<number | undefined> => doc.op(async () => {
   const d = await model.findOne({oId}, 'num').sort({catId: 1});
   return d?.num;
 });
 
-export const countPerOrg = async (oId: doc.ObjId) => doc.op(async () =>
+export const countPerOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
   model.countDocuments({oId}));

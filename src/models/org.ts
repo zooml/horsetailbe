@@ -50,7 +50,7 @@ export type CloseFlds = {
   readonly desc: desc.Flds;
 };
 
-export type CFlds = {
+export type CFlds = { // create fields
   readonly saId: doc.ObjId;
   name: string;
   st: number;
@@ -123,18 +123,19 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (flds: CFlds) => doc.op(async () => new model(flds).save());
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
 
-export const findById = async (id: string) => doc.op(async () => model.findById(id));
+export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.op(async () =>
+  model.findById(id));
 
-export const findByUser = async (uId: string) => doc.op(async () =>
+export const findActiveByUser = async (uId: string): Promise<Doc[]> => doc.op(async () =>
   model.find({'users.id': uId, st: STATES.ACTIVE}, {id: 1, saId: 1, name: 1, 'users.$': 1}));
 
-export const findRolesForUser = async (oId: string, uId: string) => doc.op(async () => {
+export const findActiveRolesForUser = async (oId: doc.ObjId, uId: doc.ObjId) => doc.op(async () => {
   const org = await model.findOne({_id: oId, 'users.id': uId, st: STATES.ACTIVE}, {'users.$': 1});
   return org?.users[0].roles.map(r => r.id) ?? [];
 });
 
-export const countPerSA = async (saId: doc.ObjId) => doc.op(async () =>
-  // TODO need to either garbage collect or count separate
+export const countActivePerSA = async (saId: doc.ObjId) => doc.op(async () =>
+  // TODO returns only active, need to either garbage collect or count separate
   model.countDocuments({saId, st: STATES.ACTIVE}));

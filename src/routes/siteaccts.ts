@@ -39,7 +39,7 @@ export const create = async (uId: doc.ObjId, fName: string) =>
 
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   // TODO get by uId
-  const uId = doc.toObjId(res.locals.uId);
+  const uId: doc.ObjId = res.locals.uId;
 }));
 
 // TODO needed??? router.post('/', ctchEx(async (req: Request, res: Response) => {

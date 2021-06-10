@@ -1,3 +1,4 @@
+/* tslint:disable:max-classes-per-file */
 import { logError, logWarn } from "../platform/logger";
 
 const MAX_STR_V_LEN = 49;
@@ -32,7 +33,7 @@ export class UserError extends AppError {
 
 const formatValue = (v: any): string => {
   // TODO v does not convert correctly if object
-  let s = `${typeof(v) == 'string' ? "'" + v + "'" : '' + v}`;
+  let s = `${typeof(v) === 'string' ? "'" + v + "'" : '' + v}`;
   if (MAX_STR_V_LEN < s.length) {
     s = `${s.slice(0, MAX_STR_V_LEN)}...`;
   }
@@ -108,7 +109,7 @@ export class MinError extends BadRequestFld {
 }
 export class FmtError extends BadRequestFld {
   constructor(path: string, pattern?: string) {
-    super(path, `incorrect format${pattern ? ', should ' + pattern : ''}`, FMT_ERROR);
+    super(path, `incorrect format${pattern ? ', should be ' + pattern : ''}`, FMT_ERROR);
   }
 }
 export class ExtraFldsError extends BadRequestFld {
