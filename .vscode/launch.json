@@ -13,7 +13,7 @@
       "args": [
         "${workspaceFolder}/test/**/*.test.ts",
         "-u", "bdd",
-        "--timeout", "999999",
+        "--no-timeouts",
         "--colors",
         "--require", "test/hooks.ts"
       ],

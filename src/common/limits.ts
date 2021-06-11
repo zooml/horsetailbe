@@ -43,8 +43,8 @@ export type ArrLimit = LimitMinMax & {
 export const NAME_REGEXP = /^[0-9A-Za-z]+$/;
 
 export const FIELDS = {
-  tag: {kind: 'string', name: 'tag', min: 1, max: 12} as StrLimit,
-  name: {kind: 'string', name: 'name', min: 1, max: 60} as StrLimit,
+  tag: {kind: 'string', name: 'tag', min: 1, max: 20} as StrLimit,
+  name: {kind: 'string', name: 'name', min: 1, max: 40} as StrLimit,
   note: {kind: 'string', name: 'note', min: 0, max: 800} as StrLimit,
   email: {kind: 'string', name: 'email', min: 1, max: 64,
     regex: /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/

@@ -88,7 +88,7 @@ const fromDoc = (d: Doc): Get => ({
   clos: d.clos.map(fromCloseFlds)
 });
 
-const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.desc];
+const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.desc, FIELDS.users, FIELDS.funds, FIELDS.clos];
 
 const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds => {
   const at = new Date();

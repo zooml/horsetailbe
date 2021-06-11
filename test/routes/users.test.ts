@@ -7,8 +7,21 @@ import 'mocha';
 import * as db from '../dbutil';
 import * as util from '../util';
 import { svr } from '../hooks';
+import cookie from 'cookie';
 
 const PATH = util.PATH_PREFIX + 'users';
+const SESSIONS_PATH = util.PATH_PREFIX + 'sessions';
+
+export const signIn = async () => {
+  const email = 'a@b.co';
+  const pswd = 'aa11AA..';
+  let res = await svr.post(PATH).send({email, pswd, fName: 'joe'});
+  res.should.have.status(200);
+  const id = res.body.id;
+  res = await svr.post(SESSIONS_PATH).send({email, pswd});
+  res.should.have.status(204);
+  return [id, cookie.parse(res.header['set-cookie'][0]).ses];
+}
 
 describe('users integration test', () => {
 	afterEach(() => db.clear());
@@ -108,10 +121,52 @@ describe('users integration test', () => {
             res.body.message.should.be.equal("field <index> value 'a@b.co' is not unique")
             done();});});
   })
-  it('should reject GET w/o session', done => {
-    svr.get(PATH)
-      .end((_err, res) => {
-        res.should.have.status(401);
-        done();});
+  it('should reject GET w/o session', async () => {
+    const res = await svr.get(PATH);
+    res.should.have.status(401);
+    res.body.code.should.equal(1202);
+  })
+  it('should sign in and read user', async () =>  {
+    const email = 'a@b.co';
+    const pswd = 'aa11AA..';
+    let res = await svr.post(PATH).send({email, pswd, fName: 'joe'});
+    res.should.have.status(200);
+    res = await svr.post(SESSIONS_PATH).send({email, pswd});
+    res.should.have.status(204);
+    const ses = cookie.parse(res.header['set-cookie'][0]).ses;
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses))
+      .send();
+    res.should.have.status(200);
+    res.body.length.should.equal(1);
+    const o = res.body[0];
+    o.id.should.be.a('string');
+    o.id.should.have.lengthOf(24);
+    o.email.should.equal(email);
+    o.fName.should.equal('joe');
+    o.desc.should.be.empty;
+    o.opts.should.be.empty;
+    expect(o.lName).to.be.an('undefined');
+    o.st.should.equal(3);
+    o.v.should.equal(0);
+    const at = Date.now();
+    const past = at - 10000;
+    o.at.should.be.within(past, at);
+    o.upAt.should.be.within(past, at);
+    Object.keys(o).should.have.lengthOf(9);
+  })
+  it('should reject bad cookie', async () =>  {
+    const email = 'a@b.co';
+    const pswd = 'aa11AA..';
+    let res = await svr.post(PATH).send({email, pswd, fName: 'joe'});
+    res.should.have.status(200);
+    res = await svr.post(SESSIONS_PATH).send({email, pswd});
+    res.should.have.status(204);
+    const ses = cookie.parse(res.header['set-cookie'][0]).ses;
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses + 'a'))
+      .send();
+    res.should.have.status(401);
+    res.body.code.should.equal(1202);
   })
 })

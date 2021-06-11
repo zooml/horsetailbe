@@ -28,7 +28,7 @@ export type CFlds = {
   fName: string;
   lName?: string;
   st: number;
-  readonly opts: {};
+  readonly opts: {[k: string]: any};
   readonly desc: desc.Flds;
 };
 
@@ -68,7 +68,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
   fName: {type: String, required: true, trim: true},
   lName: {type: String, trim: true},
   st: {type: Number, required: true},
-  opts: {},
+  opts: {type: Object, required: true},
   desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: NAME, required: false}, // only not required when self registering
     note: {type: String, trim: true},
@@ -97,7 +97,8 @@ export const authn = async (email: string, pswd: string): Promise<Doc | undefine
   return user;
 });
 
-export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => 
+  model.create(f));
 
 export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.op(async () =>
   model.findById(id));

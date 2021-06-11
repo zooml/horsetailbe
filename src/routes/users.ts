@@ -29,7 +29,7 @@ const fromDoc = (d: Doc): Get => {
     email: d.email,
     fName: d.fName,
     st: d.st,
-    opts: d.opts,
+    opts: d.opts ?? {},
     desc: descs.fromFlds(d.desc),
   };
   if (d.lName) g.lName = d.lName;

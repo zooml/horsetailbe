@@ -14,11 +14,13 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   if (!ses.pswd) throw new MissingError('pswd');
   const u = await user.authn(ses.email, ses.pswd);
   session.set(req, res, u._id.toHexString())
-    .status(204);
+    .status(204)
+    .send();
 }));
 
 router.delete('/', ctchEx(async (req: Request, res: Response) => {
   // no need to authz.validate, this is authn
   session.clear(res)
-    .status(204);
+    .status(204)
+    .send();
 }));

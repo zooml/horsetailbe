@@ -20,7 +20,7 @@ export const STD_ROLE_IDS = Object.freeze({
 
 export const GENERAL_FUND = Object.freeze({
   id: 1,
-  tag: 'general'
+  tag: 'General'
 });
 
 export type RoleFlds = {
@@ -84,7 +84,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
   }],
   funds: [{ // FundFlds schema
     id: {type: Number, required: true},
-    name: {type: String, required: true, trim: true},
+    tag: {type: String, required: true, trim: true},
     begAt: {type: Date, required: true},
     at: {type: Date, required: true},
     desc: { // desc.Flds schema
@@ -123,7 +123,8 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => 
+  model.create(f));
 
 export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.op(async () =>
   model.findById(id));
