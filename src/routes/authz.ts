@@ -34,18 +34,45 @@ export const notFound = (pathPrefix: string) => (req: Request, res: Response, ne
   next(new ForbiddenError(res.locals.uId?.toHexString(), req.method,
          pathPrefix + req.path.substring(1), undefined, 'unknown path'));
 
-export const validate = async (req: Request, res: Response, rsc: string, rscId?: string, rscSub?: string) => {
+export type ValidOpts = {
+  rscSub?: string;
+  invite?: boolean; // user POST for invite
+};
+
+const cacheOrg = async (res: Response): Promise<org.Doc> => {
+  if (res.locals.oId && !res.locals.org) {
+    res.locals.org = await org.findById(res.locals.oId);
+  }
+  return res.locals.org;
+}
+
+const cacheRoles = async (res: Response): Promise<number[]> => {
+  const org = await cacheOrg(res);
+  const uId: doc.ObjId = res.locals.uId;
+
+  // TODO check role of uId
+  return [];
+}
+
+export const validate = async (req: Request, res: Response, rsc: string, opts?: ValidOpts) => {
   let allowed = false;
   if (rsc === sessions.SEGMENT) {
-    // no perms required for creating/deleting sessions
+    // no perms required for sign in/out sessions (note sign in requires perms and active)
+    // allow: all
     allowed = true;
   } else {
+    // the valid session cookie has already stored the uId
+    // note the session is not checked for "sessions" path and is optional for POST "users"
+    // a valid session is assumed to indicate valid user--TODO SECURITY: need was to suspend users immediately
+    // TODO could put this here (or cache user for PERF)
+    // if (!await user.activeExists(uId)) throw new ForbiddenError(uId.toHexString(), req.method, rsc, rscId, 'user is not active');
     const uId: doc.ObjId = res.locals.uId;
-    const meth = req.method;
-    const isRead = isReadMethod(req);
+    // method for specific resource will have this set
+    const rscId = req.params.id;
+    // see if there is a oId anywhere and cache
     let oId;
-    if (rsc == orgs.SEGMENT && rscId) oId = doc.toObjId(rscId, 'orgs id');
-    else {
+    if (rsc === orgs.SEGMENT && rscId) oId = doc.toObjId(rscId, 'orgs id');
+    else { // prioritize query oId over header
       const q = qs(req.query.oId);
       if (q) oId = doc.toObjId(q, 'query oId');
       else {
@@ -54,54 +81,55 @@ export const validate = async (req: Request, res: Response, rsc: string, rscId?:
       }
     }
     res.locals.oId = oId;
-    if (rsc === users.SEGMENT) {
-      // POST: register user: (1) self, or (2) invite (uId is valid)
-      if (meth === 'POST') {
+    const meth = req.method;
+    const isRead = isReadMethod(req);
 
-      } else if (meth === 'PATCH') {
+    // const roles = await findActiveRolesForUser(oId, uId);
+    // res.locals.roles = roles;
 
-      } else if (isRead) {
+    // TODO HEAD, OPTIONS????
 
-      } else throw new InternalError({message: `missing authz case: users ${meth}`});
-
-
-    } else if (meth === 'xxx') {
-
-      // user may have been deactivated while session still valid
-      // TODO PERF: cache this
-      if (!await user.activeExists(uId)) throw new ForbiddenError(uId.toHexString(), req.method, rsc, rscId, 'user is not active');
-      // get the org, if specified
-      // TODO PERF: cache this
-
-      res.locals.org = oId ? await org.findById(oId) : undefined;
-      // TODO check if: exists, active
-
-      if (rsc === orgs.SEGMENT) {
-        // POST: any user can create their own org
-        // PATCH: check perms (subcases, e.g. roles vs funds vs closes?????)
-
-        // note: OK to read non-active????? NO
-
-
-      } else {
-        const roles = await findActiveRolesForUser(oId, uId);
-        res.locals.roles = roles;
-        switch (rsc) {
-          case users.SEGMENT:
-            // no current method restrictions
-            allowed = true;
-            break;
-          case orgs.SEGMENT:
-
-            break;
-          case siteaccts.SEGMENT:
-            break;
-          case accounts.SEGMENT:
-            break;
-          case txndocs.SEGMENT:
-          break;
+    switch (rsc) {
+      case users.SEGMENT:
+        if (meth === 'POST') {
+          // allow: all for self-register, or TODO org SUPER for invite (uId is set)
+          allowed = true;
+        } else if (meth === 'PATCH') {
+          // allow: self only (TODO SECURITY: how to set suspended????)
+          allowed = uId.toHexString() === rscId;
+        } else if (isRead) {
+          // allow: all,  ASSUMING READING ACTIVE USER (TODO SECURITY: restrict to members of same orgs?)
+          allowed = true;
         }
-      }
+        break;
+      case orgs.SEGMENT:
+
+        allowed = true; // TODO remove!!!!!!!!
+        if (meth === 'POST') {
+          // allow: 
+          // allowed = 
+        } else if (meth === 'PATCH') {
+          // allow: 
+          // allowed = 
+        } else if (meth === 'GET') {
+          if (oId) {
+            const roles = await cacheRoles(res);
+            
+            // TODO check roles
+
+          } else {
+            // reading all that user is member of
+            // allow: all, ASSUMING QUERY BY UID
+            allowed = true;
+          }
+        }
+        break;
+      case siteaccts.SEGMENT:
+        break;
+      case accounts.SEGMENT:
+        break;
+      case txndocs.SEGMENT:
+      break;
     }
   }
   // if (!allowed) throw new ForbiddenError(uId, isRead, rsc, rscId);

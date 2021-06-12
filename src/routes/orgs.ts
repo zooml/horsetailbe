@@ -1,12 +1,12 @@
 import express, { Request, Response } from 'express';
 import { create, STATES, STD_ROLE_IDS, GENERAL_FUND, RoleFlds, UserFlds, FundFields, CloseFlds, countActivePerSA, Doc, CFlds, findById, findActiveByUser } from '../models/org';
-import { NotFound } from 'http-errors';
 import * as rsc from './rsc';
 import * as descs from './descs';
 import * as actts from './actts';
 import * as authz from './authz';
 import * as siteacct from '../models/siteacct';
 import { InternalError, LimitError } from '../common/apperrs';
+import { NotFound } from '../controllers/errors';
 import { FIELDS, RESOURCES } from '../common/limits';
 import { begOfDay, fromDate } from '../common/acctdate';
 import * as doc from '../models/doc';
@@ -72,21 +72,24 @@ const fromCloseFlds = (f: CloseFlds): CloseGet => ({
 type Get = rsc.Get & {
   saId: string;
   name: string;
-  desc: descs.Get;
+  desc?: descs.Get;
   users: UserGet[];
-  funds: FundGet[];
-  clos: CloseGet[];
+  funds?: FundGet[];
+  clos?: CloseGet[];
 };
 
-const fromDoc = (d: Doc): Get => ({
-  ...rsc.fromDoc(d),
-  saId: d.saId.toHexString(),
-  name: d.name,
-  desc: descs.fromFlds(d.desc),
-  users: d.users.map(fromUserFlds),
-  funds: d.funds.map(fromFundFlds),
-  clos: d.clos.map(fromCloseFlds)
-});
+const fromDoc = (d: Doc): Get => {
+  const g: Get = {
+    ...rsc.fromDoc(d),
+    saId: d.saId.toHexString(),
+    name: d.name,
+    users: d.users.map(fromUserFlds),
+  };
+  if (d.desc?.uId) g.desc = descs.fromFlds(d.desc);
+  if (d.funds) g.funds = d.funds.map(fromFundFlds);
+  if (d.clos) g.clos = d.clos.map(fromCloseFlds);
+return g;
+};
 
 const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.desc, FIELDS.users, FIELDS.funds, FIELDS.clos];
 
@@ -130,12 +133,18 @@ const validPostLimits = async (f: CFlds) => {
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   const resDocs = await findActiveByUser(res.locals.uId);
+  if (Array.isArray(resDocs)) {
+    console.log('is array');
+    if ('map' in resDocs) {
+      console.log('has map');
+    }
+  }
   // TODO wrong path, test if getting by SA
   res.json(resDocs?.map(fromDoc) ?? []);
 }));
 
 router.get('/:id', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT, req.params.id);
+  await authz.validate(req, res, SEGMENT);
   const oId: doc.ObjId = res.locals.oId;
   const d: Doc | undefined = res.locals.org;
   if (!d || d.st !== STATES.ACTIVE) throw new NotFound(req.path);
@@ -150,6 +159,8 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   if (!saId) throw new InternalError({message: `missing siteacct for user ${uId}`});
   const f = toValidCFlds(req.body, uId, saId);
   await validPostLimits(f);
-  const resDoc = await create(f);
-  res.json(fromDoc(resDoc));
+  const d = await create(f);
+  res.json(fromDoc(d));
+}));
+router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
 }));

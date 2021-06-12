@@ -52,13 +52,16 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     return next(err);
   }
   if (err instanceof createError.HttpError) { // may be set by express
-    res.status(err.statusCode); // TODO??????
+    res.status(err.statusCode) // TODO??????
+      .send();
   } else {
     let error = err;
     if (!(err instanceof AppError)) error = new InternalError(err); // not ours so it's unknown
     res.status(error.statusCode);
     const cls = Math.floor(error.statusCode / 100);
-    if (error.statusCode !== 403 && cls !== 5) { // don't send details of why
+    if (error.statusCode === 403 || cls === 5) { // don't send details of why
+      res.send();
+    } else {
       res.json({
         code: error.code,
         message: error.message

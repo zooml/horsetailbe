@@ -16,7 +16,7 @@ const SESSIONS_PATH = util.PATH_PREFIX + 'sessions';
 describe('orgs integration test', () => {
 	afterEach(() => db.clear());
 
-  it('should create org', async () =>  {
+  it('should POST org', async () =>  {
     const [uId, ses] = await signIn();
     const res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses))
@@ -28,12 +28,80 @@ describe('orgs integration test', () => {
     const o = res.body;
     o.id.should.be.a('string');
     o.id.should.have.lengthOf(24);
+    o.v.should.equal(0);
     o.name.should.equal('my org');
     o.desc.uId.should.equal(uId);
     o.desc.id.should.equal('ext id');
     o.desc.note.should.equal('this is a note');
     o.desc.url.should.equal('https://google.com');
-
-    // TODO users funds
+    util.testAt(o.at).should.be.true;
+    util.testAt(o.upAt).should.be.true;
+    o.users.should.be.an('array');
+    o.users.should.have.lengthOf(1);
+    const u = o.users[0];
+    u.id.should.equal(uId);
+    u.roles.should.be.an('array');
+    u.roles.should.have.lengthOf(1);
+    const r = u.roles[0];
+    r.id.should.equal(1);
+    o.funds.should.be.an('array');
+    o.funds.should.have.lengthOf(1);
+    const f = o.funds[0];
+    f.id.should.equal(1);
+    f.tag.should.equal('General');
+    f.begAt.should.be.a('number');
+    util.testAt(f.at).should.be.true;
+    // new Date(f.begAt).toISOString().should.match(/T00:00:00\.000Z$/); TODO
+    f.desc.uId.should.equal(uId);
+    o.clos.should.be.an('array');
+    o.clos.should.have.lengthOf(0);
+    Object.keys(o).should.have.lengthOf(10);
+  })
+  it('should GET org', async () =>  {
+    const [uId, ses] = await signIn();
+    let res = await svr.post(PATH)
+      .set('Cookie', cookie.serialize('ses', ses))
+      .send({
+        name: 'my org',
+        desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
+      });
+    res.should.have.status(200);
+    const oId = res.body.id;
+    res = await svr.get(PATH + `/${oId}`)
+      .set('Cookie', cookie.serialize('ses', ses))
+      .send();
+    res.should.have.status(200);
+    let o = res.body;
+    o.id.should.equal(oId);
+    o.v.should.equal(0);
+    o.name.should.equal('my org');
+    o.desc.uId.should.equal(uId);
+    o.desc.id.should.equal('ext id');
+    o.desc.note.should.equal('this is a note');
+    o.desc.url.should.equal('https://google.com');
+    let u = o.users[0];
+    u.id.should.equal(uId);
+    u.roles.should.be.an('array');
+    u.roles.should.have.lengthOf(1);
+    const r = u.roles[0];
+    r.id.should.equal(1);
+    o.funds.should.be.an('array');
+    o.funds.should.have.lengthOf(1);
+    const f = o.funds[0];
+    f.id.should.equal(1);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses))
+      .send();
+    res.should.have.status(200);
+    res.body.should.be.a('array');
+    res.body.should.have.lengthOf(1);
+    o = res.body[0];
+    o.id.should.equal(oId);
+    o.name.should.equal('my org');
+    should.not.exist(o.desc);
+    u = o.users[0];
+    u.id.should.equal(uId);
+    should.not.exist(o.funds);
+    should.not.exist(o.clos);
   })
 })

@@ -65,7 +65,8 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   const uId: doc.ObjId = res.locals.uId;
   if (res.locals.oId) {
-    res.json([]); // TODO return all in org, but roles only if user has authz
+    // TODO only active users!!!!!!!
+    res.json([]); // TODO return all in org
   } else {
     const resDoc = await findById(uId);
     if (!resDoc) {

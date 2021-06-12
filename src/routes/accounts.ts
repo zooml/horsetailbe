@@ -166,7 +166,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
 }));
 
 router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT, req.params.id);
+  await authz.validate(req, res, SEGMENT);
 
   // TODO
 

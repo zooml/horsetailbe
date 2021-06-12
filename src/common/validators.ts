@@ -58,6 +58,7 @@ export const toBool = (v: any): boolean | undefined => {
   if (v === undefined) return undefined;
   if (typeof v === 'boolean') return v;
   if (isNum(v)) return v === 0 ? false : (v === 1 ? true : undefined);
+  if (isStr(v)) return v === 'false' ? false : (v === 'true' ? true : undefined);
   return undefined;
 };
 

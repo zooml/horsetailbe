@@ -35,6 +35,7 @@ const hndlErr = (err: any): never => {
       }
     } else if (err.name === 'ValidationError') {
       // we should have caught these already
+      // e.g.: 'Org validation failed: funds.0.name: Path `name` is required.'
       const msgs = Object.values(err.errors).map((e: Error) => e.message);
       error = new DbValidationError(msgs);
     }

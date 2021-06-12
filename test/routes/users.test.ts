@@ -75,33 +75,29 @@ describe('users integration test', () => {
   //       res.body.code.should.equal(1110);
   //       done();});
 	// })
-	it('should accept', done => {
+	it('should POST user', done => {
     const fName = '    aaaaaaaaaaaaaaaaaaab   ';
     svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.', fName})
       .end((_err, res) => {
         res.should.have.status(200);
         res.body.should.deep.include({email: 'a@b.co', fName: fName.trim(), st: 3, v: 0});
-        const at = Date.now();
-        const past = at - 10000;
-        res.body.at.should.be.within(past, at);
-        res.body.upAt.should.be.within(past, at);
+        util.testAt(res.body.at).should.be.true;
+        util.testAt(res.body.upAt).should.be.true;
         res.body.id.length.should.be.equal(24);
         res.body.desc.should.deep.equal({});
         res.body.opts.should.deep.equal({});
         Object.keys(res.body).length.should.be.equal(9);
         done();});
 	})
-	it('should accept optional lName', done => {
+	it('should POST user with optional lName', done => {
     svr.post(PATH)
       .send({email: 'a@b.co', pswd: 'aa11AAB.', fName: 'fn', lName: 'lname'})
       .end((_err, res) => {
         res.should.have.status(200);
         res.body.should.deep.include({email: 'a@b.co', fName: 'fn', lName: 'lname', st: 3, v: 0});
-        const at = Date.now();
-        const past = at - 10000;
-        res.body.at.should.be.within(past, at);
-        res.body.upAt.should.be.within(past, at);
+        util.testAt(res.body.at).should.be.true;
+        util.testAt(res.body.upAt).should.be.true;
         res.body.id.length.should.be.equal(24);
         res.body.desc.should.deep.equal({});
         res.body.opts.should.deep.equal({});
@@ -126,7 +122,7 @@ describe('users integration test', () => {
     res.should.have.status(401);
     res.body.code.should.equal(1202);
   })
-  it('should sign in and read user', async () =>  {
+  it('should sign in and GET user', async () =>  {
     const email = 'a@b.co';
     const pswd = 'aa11AA..';
     let res = await svr.post(PATH).send({email, pswd, fName: 'joe'});
@@ -149,10 +145,8 @@ describe('users integration test', () => {
     expect(o.lName).to.be.an('undefined');
     o.st.should.equal(3);
     o.v.should.equal(0);
-    const at = Date.now();
-    const past = at - 10000;
-    o.at.should.be.within(past, at);
-    o.upAt.should.be.within(past, at);
+    util.testAt(o.at).should.be.true;
+    util.testAt(o.upAt).should.be.true;
     Object.keys(o).should.have.lengthOf(9);
   })
   it('should reject bad cookie', async () =>  {
