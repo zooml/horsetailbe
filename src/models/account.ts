@@ -75,7 +75,8 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
-export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => model.create(f));
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
+  model.create(f));
 
 export const findById = async (id: doc.ObjId, p?: {[k: string]: number}): Promise<Doc | undefined> => doc.op(async () =>
   model.findById(id, p));

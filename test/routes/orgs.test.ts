@@ -11,7 +11,18 @@ import cookie from 'cookie';
 import { signIn } from './users.test';
 
 const PATH = util.PATH_PREFIX + 'orgs';
-const SESSIONS_PATH = util.PATH_PREFIX + 'sessions';
+
+export const createOrg = async (name: string) => {
+  const [uId, ses] = await signIn();
+  const res = await svr.post(PATH)
+    .set('Cookie', cookie.serialize('ses', ses))
+    .send({
+      name,
+      desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
+    });
+  res.should.have.status(200);
+  return [uId, ses, res.body.id];
+}
 
 describe('orgs integration test', () => {
 	afterEach(() => db.clear());
@@ -30,10 +41,7 @@ describe('orgs integration test', () => {
     o.id.should.have.lengthOf(24);
     o.v.should.equal(0);
     o.name.should.equal('my org');
-    o.desc.uId.should.equal(uId);
-    o.desc.id.should.equal('ext id');
-    o.desc.note.should.equal('this is a note');
-    o.desc.url.should.equal('https://google.com');
+    o.desc.should.eql({uId, id: 'ext id', note: 'this is a note', url: 'https://google.com'});
     util.testAt(o.at).should.be.true;
     util.testAt(o.upAt).should.be.true;
     o.users.should.be.an('array');
@@ -75,10 +83,7 @@ describe('orgs integration test', () => {
     o.id.should.equal(oId);
     o.v.should.equal(0);
     o.name.should.equal('my org');
-    o.desc.uId.should.equal(uId);
-    o.desc.id.should.equal('ext id');
-    o.desc.note.should.equal('this is a note');
-    o.desc.url.should.equal('https://google.com');
+    o.desc.should.eql({uId, id: 'ext id', note: 'this is a note', url: 'https://google.com'});
     let u = o.users[0];
     u.id.should.equal(uId);
     u.roles.should.be.an('array');

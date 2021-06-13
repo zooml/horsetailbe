@@ -3,7 +3,7 @@
 // TODO dates
 
 // note cannot determine today since it depends on timezone???
-export const today = () => new Date(); // TODO fix this to start at day begin UTC
+export const begToday = () => new Date(); // TODO fix this to start at day begin UTC
 
 // TODO fix beg of day!!!!!!!
 export const begOfDay = (d: Date) => d;

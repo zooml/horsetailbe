@@ -11,7 +11,7 @@ import * as org from '../models/org';
 import * as orgs from './orgs';
 import { findActiveRolesForUser, STD_ROLE_IDS } from '../models/org';
 import { ParsedQs } from 'qs';
-import { InternalError } from '../common/apperrs';
+import { InternalError, MissingError } from '../common/apperrs';
 
 const OID_HDR = 'x-oid';
 
@@ -124,12 +124,16 @@ export const validate = async (req: Request, res: Response, rsc: string, opts?: 
           }
         }
         break;
-      case siteaccts.SEGMENT:
-        break;
       case accounts.SEGMENT:
+        if (!oId) throw new MissingError('oId in header or query')
+
+        allowed = true; // TODO remove!!!!!!!!
+
         break;
       case txndocs.SEGMENT:
-      break;
+        break;
+      case siteaccts.SEGMENT:
+        break;
     }
   }
   // if (!allowed) throw new ForbiddenError(uId, isRead, rsc, rscId);

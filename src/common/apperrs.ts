@@ -78,7 +78,7 @@ export class DependentError extends BadRequestFld {
   constructor(path: string, other: string, xor?: boolean) {
     super(
       path,
-      xor ? `or ${other} must be set but not both` : `must be set if ${other} is set`,
+      xor ? `or '${other}' must be set but not both` : `must be set if '${other}' is set`,
       DEPENDENT_ERROR);
   }
 }

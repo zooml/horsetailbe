@@ -9,7 +9,7 @@ import * as authz from './authz';
 import * as rsc from './rsc';
 import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
-import { fromDate } from '../common/acctdate';
+import { begToday, fromDate } from '../common/acctdate';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
@@ -56,14 +56,14 @@ const fromDoc = (d: Doc): Get => {
   return g;
 };
 
-const POST_DEF: rsc.Def = [FIELDS.oId, FIELDS.num, FIELDS.name, FIELDS.begAt, FIELDS.desc, FIELDS.sumId, FIELDS.catId, FIELDS.isCr];
+const POST_DEF: rsc.Def = [FIELDS.oId, FIELDS.num, FIELDS.name, FIELDS.begAt, FIELDS.desc, FIELDS.sumId, FIELDS.catId, FIELDS.isCr, FIELDS.clos, FIELDS.actts];
 
 const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds => {
   const f: CFlds = {
     oId,
     num: o.num,
     name: o.name,
-    begAt: o.begAt,
+    begAt: o.begAt || begToday(),
     desc: descs.toFlds(o.desc, uId),
     clos: [],
     actts: []
@@ -90,6 +90,17 @@ const digitsAndPower = (n: number): number[] => {
   }
   return [digits, power];
 };
+
+const acctIsActiveAt = (d: Doc, at: Date) => {
+  if (at < d.begAt) return false;
+  let isAct = true;
+  for (const actt of d.actts) {
+    if (at < actt.at) return isAct;
+    isAct = !isAct;
+  }
+  return isAct;
+}
+
 
 const validateNum = async (f: CFlds, sumNum?: number) => {
   const num = f.num;
@@ -119,19 +130,22 @@ const validate = async (f: CFlds) => {
   if ((f.catId !== undefined && f.sumId !== undefined) ||
     (f.catId === undefined && f.sumId === undefined)) throw new DependentError('paId', 'catId', true);
   if (f.sumId) { // non-general account
-    const sum = await findById(f.sumId, {num: 1});
-    if (!sum) throw new RefError('sumId', 'account', f.sumId);
-    validateNum(f, sum.num);
+    const sum = await findById(f.sumId, {num: 1, begAt: 1, actts: 1});
+    if (!sum || !acctIsActiveAt(sum, f.begAt)) throw new RefError('sumId', 'account', f.sumId);
+    await validateNum(f, sum.num);
   } else { // general account
     const cat = findAcctCatById(f.catId); // f.catId is defined
     if (!cat) throw new RefError('catId', 'category', f.catId);
     if (await exists({oId: f.oId, catId: f.catId})) throw new DupError('catId', f.catId);
     if (f.isCr !== undefined && f.isCr !== cat.isCr) throw new ValueError('isCr', f.isCr, 'must be same as category or not set');
     delete f.isCr;
-    validateNum(f);
+    await validateNum(f);
   }
 
-  // TODO begAt must be at or after the last close
+  
+  // TODO begAt must be at or after the last close => need cached org!!!!!!
+
+
 };
 
 const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId) => {
@@ -161,7 +175,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   const oId: doc.ObjId = res.locals.oId;
   const f = await toValidCFlds(req.body, uId, oId);
   await validPostLimits(f);
-  const resDoc =  await create(f);
+  const resDoc = await create(f);
   res.json(fromDoc(resDoc));
 }));
 
