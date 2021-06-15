@@ -89,9 +89,5 @@ export const validDate = (lim: DateLimit, thro: boolean, v: any) => {
     if (thro) throw new DayBegError(lim.name);
     return false;
   }
-  if (lim.minToday && v < acctdate.begToday()) {
-    if (thro) throw new MinError(lim.name, 'today');
-    return false;
-  }
   return true;
 };

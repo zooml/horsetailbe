@@ -5,3 +5,7 @@ export const testAt = (v: number) => {
   const past = at - 10000;
   return past < v && v < at;
 };
+
+export const testAts = (v: {at: number, upAt: number}) => {
+  return testAt(v.at) && testAt(v.upAt);
+};

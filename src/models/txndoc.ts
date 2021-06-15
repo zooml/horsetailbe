@@ -9,17 +9,18 @@ export const NAME = 'TxnDoc';
 
 const SObjectId = Schema.Types.ObjectId;
 
+export type AmtFlds = {
+  acId: doc.ObjId;
+  fnId: number;
+  amt: number;
+};
+
 export type CFlds = {
   oId: doc.ObjId;
-  ts: string;
-  kind: string;
+  begAt: Date;
+  kind: number;
   desc: desc.Flds;
-  begAt?: Date;
-  amts: {
-    acId: doc.ObjId;
-    fnId: number;
-    amt: number;
-  }[],
+  amts: AmtFlds[],
   dueAt?: Date;
 };
 
@@ -29,20 +30,20 @@ export type Doc = doc.Doc & Flds;
 
 const schema = new Schema<Flds, mongoose.Model<Flds>>({
   oId: {type: SObjectId, ref: ORG_NAME, required: true},
-  ts: {type: String, required: true, trim: true}, // timestamp, e.g. 20210324231845012-s8v3x
-  kind: {type: String, required: true, trim: true}, // TODO
+  begAt: {type: Date, required: true},
+  kind: {type: Number, required: true},
   desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},
     id: {type: String, trim: true},
     url: {type: String, trim: true}
   },
-  begAt: Date, // entry date (use at if undef)
   amts: [{
     acId: {type: SObjectId, ref: ACCOUNT_NAME, required: true},
     fnId: {type: Number, required: true},
     amt: {type: Number, required: true}
   }],
+  dueAt: Date
   // img: { // https://www.geeksforgeeks.org/upload-and-retrieve-image-on-mongodb-using-mongoose/
   //   ct: String, // content type
   //   data: Buffer
@@ -50,7 +51,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
 }, {timestamps: {createdAt: 'at', updatedAt: 'upAt'}});
 
 schema
-  .index({oId: 1, ts: 1}, {unique: true})
+  .index({oId: 1, begAt: 1, at: 1}, {unique: true})
   .index({oId: 1, 'amts.acId': 1});
 
 export const Model = mongoose.model(NAME, schema);

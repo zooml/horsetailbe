@@ -8,7 +8,7 @@ import * as siteacct from '../models/siteacct';
 import { InternalError, LimitError } from '../common/apperrs';
 import { NotFound } from '../controllers/errors';
 import { FIELDS, RESOURCES } from '../common/limits';
-import { begOfDay, fromDate } from '../common/acctdate';
+import { toBegOfDay, fromDate, begToday } from '../common/acctdate';
 import * as doc from '../models/doc';
 import ctchEx from '../controllers/ctchex';
 
@@ -72,6 +72,7 @@ const fromCloseFlds = (f: CloseFlds): CloseGet => ({
 type Get = rsc.Get & {
   saId: string;
   name: string;
+  begAt: number;
   desc?: descs.Get;
   users: UserGet[];
   funds?: FundGet[];
@@ -83,6 +84,7 @@ const fromDoc = (d: Doc): Get => {
     ...rsc.fromDoc(d),
     saId: d.saId.toHexString(),
     name: d.name,
+    begAt: fromDate(d.begAt),
     users: d.users.map(fromUserFlds),
   };
   if (d.desc?.uId) g.desc = descs.fromFlds(d.desc);
@@ -91,7 +93,13 @@ const fromDoc = (d: Doc): Get => {
 return g;
 };
 
-const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.desc, FIELDS.users, FIELDS.funds, FIELDS.clos];
+export const lastCloseEndAtFromCachedOrg = (res: Response): Date => {
+  const org: Doc = res.locals.org;
+  if (!org) throw new InternalError({message: 'org should be cached'});
+  return org.clos.length ? org.clos[org.clos.length - 1].endAt : org.begAt;
+}
+
+const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.begAt, FIELDS.desc, FIELDS.users, FIELDS.funds, FIELDS.clos];
 
 const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds => {
   const at = new Date();
@@ -99,6 +107,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds 
     saId,
     name: o.name,
     st: STATES.ACTIVE,
+    begAt: o.begAt || begToday(),
     desc: descs.toFlds(o.desc, uId),
     users: [{
       id: uId,
@@ -109,7 +118,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds 
     funds: [{
       id: GENERAL_FUND.id,
       tag: GENERAL_FUND.tag,
-      begAt: begOfDay(at),
+      begAt: toBegOfDay(at),
       at,
       desc: {uId},
       actts: []}],

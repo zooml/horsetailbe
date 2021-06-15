@@ -71,6 +71,7 @@ describe('accounts integration test', () => {
     o.id.should.have.lengthOf(24);
     const acId = o.id;
     o.v.should.equal(0);
+    util.testAts(o).should.be.true;
     o.num.should.equal(100);
     o.name.should.equal('My Assets');
     o.catId.should.equal(1);
@@ -91,6 +92,7 @@ describe('accounts integration test', () => {
     res.should.have.status(400);
     res.body.code.should.equal(1104)
     expect(res.body.message).to.match(/value 210 should have summary account num 100 as a prefix/);
+    // test sub acct
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
@@ -110,8 +112,9 @@ describe('accounts integration test', () => {
     should.not.exist(o.catId);
     o.sumId.should.equal(acId);
     o.desc.should.eql({uId, id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'});
+    // test GET all
     res = await svr.get(PATH)
-      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId).send();
+      .set('Cookie', cookie.serialize('ses', ses)).query({oId}).send();
     res.should.have.status(200);
     res.body.should.be.a('array');
     res.body.should.have.lengthOf(2);
@@ -123,5 +126,50 @@ describe('accounts integration test', () => {
     o.id.should.equal(acId2);
     o.num.should.equal(110);
     o.name.should.equal('Cash');
+  })
+  it('should accept POST and subacct POST', async () =>  {
+    const [uId, ses, oId] = await createOrg('My Org');
+    let res = await svr.post(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .send({
+        num: 100,
+        name: 'My Assets',
+        catId: 1,
+        desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
+      });
+    res.should.have.status(200);
+    // same number
+    res = await svr.post(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .send({
+        num: 100,
+        name: 'My Liabilities',
+        catId: 2,
+      });
+    res.should.have.status(400);
+    res.body.code.should.equal(1105)
+    expect(res.body.message).to.match(/100/);
+    // higher cat number
+    res = await svr.post(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .send({
+        num: 2000,
+        name: 'My Liabilities',
+        catId: 2,
+      });
+    res.should.have.status(400);
+    res.body.code.should.equal(1104)
+    expect(res.body.message).to.match(/num/);
+    // wrong power cat number
+    res = await svr.post(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .send({
+        num: 210,
+        name: 'My Liabilities',
+        catId: 2,
+      });
+    res.should.have.status(400);
+    res.body.code.should.equal(1104)
+    expect(res.body.message).to.match(/num/);
   })
 })

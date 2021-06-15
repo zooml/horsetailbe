@@ -9,7 +9,8 @@ import * as authz from './authz';
 import * as rsc from './rsc';
 import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
-import { begToday, fromDate } from '../common/acctdate';
+import { begToday, fromDate, toDateStr } from '../common/acctdate';
+import { lastCloseEndAtFromCachedOrg } from './orgs';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
@@ -101,7 +102,6 @@ const acctIsActiveAt = (d: Doc, at: Date) => {
   return isAct;
 }
 
-
 const validateNum = async (f: CFlds, sumNum?: number) => {
   const num = f.num;
   if (!num) throw new ValueError('num', num, 'cannot be zero');
@@ -121,12 +121,12 @@ const validateNum = async (f: CFlds, sumNum?: number) => {
     const otherNum = await findOneGANum(f.oId);
     if (otherNum) {
       const [otherDigits,] = digitsAndPower(otherNum);
-      if (digits !== otherDigits) throw new ValueError('num', num, `should have ${otherDigits}`)
+      if (digits !== otherDigits) throw new ValueError('num', num, `should have ${otherDigits} digits`)
     }
   }
 };
 
-const validate = async (f: CFlds) => {
+const validate = async (f: CFlds, lastCloseEndAt: Date) => {
   if ((f.catId !== undefined && f.sumId !== undefined) ||
     (f.catId === undefined && f.sumId === undefined)) throw new DependentError('paId', 'catId', true);
   if (f.sumId) { // non-general account
@@ -141,17 +141,13 @@ const validate = async (f: CFlds) => {
     delete f.isCr;
     await validateNum(f);
   }
-
-  
-  // TODO begAt must be at or after the last close => need cached org!!!!!!
-
-
+  if (f.begAt < lastCloseEndAt) throw new ValueError('begAt', f.begAt, `must be after last close and org start (${toDateStr(lastCloseEndAt)})`);
 };
 
-const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId) => {
+const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId, lastCloseEndAt: Date) => {
   const f = toCFlds(o, uId, oId);
   rsc.normAndValid(POST_DEF, f, {desc: descs.POST_DEF});
-  await validate(f);
+  await validate(f, lastCloseEndAt);
   return f;
 };
 
@@ -173,7 +169,8 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   const uId: doc.ObjId = res.locals.uId;
   const oId: doc.ObjId = res.locals.oId;
-  const f = await toValidCFlds(req.body, uId, oId);
+  const lastCloseEndAt = lastCloseEndAtFromCachedOrg(res);
+  const f = await toValidCFlds(req.body, uId, oId, lastCloseEndAt);
   await validPostLimits(f);
   const resDoc = await create(f);
   res.json(fromDoc(resDoc));
@@ -183,6 +180,7 @@ router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
 
   // TODO
+  // TODO only 1 actt per close!!!!
 
   res.json({id: req.params.account_id, name: 'Cash'});
 }));

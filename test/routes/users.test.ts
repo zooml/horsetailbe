@@ -82,8 +82,7 @@ describe('users integration test', () => {
       .end((_err, res) => {
         res.should.have.status(200);
         res.body.should.deep.include({email: 'a@b.co', fName: fName.trim(), st: 3, v: 0});
-        util.testAt(res.body.at).should.be.true;
-        util.testAt(res.body.upAt).should.be.true;
+        util.testAts(res.body).should.be.true;
         res.body.id.length.should.be.equal(24);
         res.body.desc.should.deep.equal({});
         res.body.opts.should.deep.equal({});
@@ -96,8 +95,7 @@ describe('users integration test', () => {
       .end((_err, res) => {
         res.should.have.status(200);
         res.body.should.deep.include({email: 'a@b.co', fName: 'fn', lName: 'lname', st: 3, v: 0});
-        util.testAt(res.body.at).should.be.true;
-        util.testAt(res.body.upAt).should.be.true;
+        util.testAts(res.body).should.be.true;
         res.body.id.length.should.be.equal(24);
         res.body.desc.should.deep.equal({});
         res.body.opts.should.deep.equal({});
@@ -145,8 +143,7 @@ describe('users integration test', () => {
     expect(o.lName).to.be.an('undefined');
     o.st.should.equal(3);
     o.v.should.equal(0);
-    util.testAt(o.at).should.be.true;
-    util.testAt(o.upAt).should.be.true;
+    util.testAts(o).should.be.true;
     Object.keys(o).should.have.lengthOf(9);
   })
   it('should reject bad cookie', async () =>  {

@@ -129,8 +129,32 @@ export const validate = async (req: Request, res: Response, rsc: string, opts?: 
 
         allowed = true; // TODO remove!!!!!!!!
 
+        if (meth === 'POST') {
+          // org needed for validation
+          // allow: 
+          // allowed = 
+          await cacheOrg(res);
+        } else if (meth === 'PATCH') {
+          // allow: 
+          // allowed = 
+        } else if (meth === 'GET') {
+          if (oId) {
+            const roles = await cacheRoles(res);
+            
+            // TODO check roles
+
+          } else {
+            // reading all that user is member of
+            // allow: all, ASSUMING QUERY BY UID
+            allowed = true;
+          }
+        }
         break;
       case txndocs.SEGMENT:
+        if (!oId) throw new MissingError('oId in header or query')
+
+        allowed = true; // TODO remove!!!!!!!!
+
         break;
       case siteaccts.SEGMENT:
         break;

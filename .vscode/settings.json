@@ -1,14 +1,6 @@
 {
-  "mochaExplorer.files": "test/**/*.test.ts",
-  "mochaExplorer.require": "ts-node/register",
-  "mochaExplorer.ui": "tdd",
-  "mochaExplorer.launcherScript": "node_modules/mocha-explorer-launcher-scripts/vscode-test",
-  "mochaExplorer.autoload": false,
-  "mochaExplorer.ipcRole": "server",
-  "mochaExplorer.env": {
-    "VSCODE_VERSION": "Insiders",
-    "ELECTRON_RUN_AS_NODE": null
-  },
-  "mochaExplorer.timeout": 999999,
-  "mochaExplorer.exit": true,
+  "mocha.files.glob": "test/**/*.js",
+  "mocha.requires": [
+    "ts-node/register"
+  ]
 }

@@ -42,8 +42,7 @@ describe('orgs integration test', () => {
     o.v.should.equal(0);
     o.name.should.equal('my org');
     o.desc.should.eql({uId, id: 'ext id', note: 'this is a note', url: 'https://google.com'});
-    util.testAt(o.at).should.be.true;
-    util.testAt(o.upAt).should.be.true;
+    util.testAts(o).should.be.true;
     o.users.should.be.an('array');
     o.users.should.have.lengthOf(1);
     const u = o.users[0];
@@ -63,14 +62,16 @@ describe('orgs integration test', () => {
     f.desc.uId.should.equal(uId);
     o.clos.should.be.an('array');
     o.clos.should.have.lengthOf(0);
-    Object.keys(o).should.have.lengthOf(10);
+    Object.keys(o).should.have.lengthOf(11);
   })
   it('should GET org', async () =>  {
     const [uId, ses] = await signIn();
+    const begAt = new Date('2021-06-13T00:00:00.000Z').getTime();
     let res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses))
       .send({
         name: 'my org',
+        begAt,
         desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
       });
     res.should.have.status(200);
@@ -83,6 +84,7 @@ describe('orgs integration test', () => {
     o.id.should.equal(oId);
     o.v.should.equal(0);
     o.name.should.equal('my org');
+    o.begAt.should.equal(begAt);
     o.desc.should.eql({uId, id: 'ext id', note: 'this is a note', url: 'https://google.com'});
     let u = o.users[0];
     u.id.should.equal(uId);

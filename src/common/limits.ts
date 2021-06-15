@@ -27,7 +27,6 @@ export type BoolLimit = Limit & {
 export type DateLimit = Limit & {
   req: boolean;
   dayBeg?: boolean;
-  minToday?: boolean;
 };
 
 export type ObjIdLimit = Limit & {
@@ -66,7 +65,7 @@ export const FIELDS = {
 
   isCr: {kind: 'boolean', name: 'isCr', req: false} as BoolLimit,
 
-  begAt: {kind: 'date', name: 'begAt', dayBeg: true, minToday: true} as DateLimit,
+  begAt: {kind: 'date', name: 'begAt', dayBeg: true} as DateLimit,
 
   uId: {kind: 'objectid', name: 'uId', req: false} as ObjIdLimit,
   saId: {kind: 'objectid', name: 'saId', req: true} as ObjIdLimit,

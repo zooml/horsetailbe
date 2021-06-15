@@ -30,8 +30,12 @@ const hndlErr = (err: any): never => {
     } else if (err.name === 'MongoError') {
       if (err.code === 11000) {
         // message: E11000 duplicate key error dup key: { : "a@b.co" }
+        // "E11000 duplicate key error dup key: { : ObjectId('60c66c296e071a1f8451ffc5'), : 100 }"
         const m = err.message.match(/\{\s*:\s*(.*?)\s*\}/);
-        error = new DupError('<index>', m ? m[1].replace(/"/g, '') : '<unknown>');
+        let v = m ? m[1].replaceAll('"', '') : '<unknown>';
+        // compound key index, remove the objid since that doesn't help
+        if (v.startsWith('ObjectId')) v = v.replace(/ObjectId.*?:\s/, '');
+        error = new DupError('<index>', v);
       }
     } else if (err.name === 'ValidationError') {
       // we should have caught these already

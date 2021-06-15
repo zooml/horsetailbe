@@ -54,6 +54,7 @@ export type CFlds = { // create fields
   readonly saId: doc.ObjId;
   name: string;
   st: number;
+  begAt: Date;
   readonly desc: desc.Flds;
   readonly users: UserFlds[];
   readonly funds: FundFields[];
@@ -68,6 +69,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
   saId: {type: SObjectId, ref: async ()=> (await import('./siteacct')).NAME, required: true},
   name: {type: String, required: true, trim: true},
   st: {type: Number, required: true},
+  begAt: {type: Date, required: true},
   desc: { // desc.Flds schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},

@@ -1,5 +1,6 @@
 /* tslint:disable:max-classes-per-file */
 import { logError, logWarn } from "../platform/logger";
+import { toDateStr } from "./acctdate";
 
 const MAX_STR_V_LEN = 49;
 
@@ -33,9 +34,13 @@ export class UserError extends AppError {
 
 const formatValue = (v: any): string => {
   // TODO v does not convert correctly if object
-  let s = `${typeof(v) === 'string' ? "'" + v + "'" : '' + v}`;
-  if (MAX_STR_V_LEN < s.length) {
-    s = `${s.slice(0, MAX_STR_V_LEN)}...`;
+  let s;
+  if (typeof v === 'string') {
+    s = (MAX_STR_V_LEN < v.length) ? `'${v.slice(0, MAX_STR_V_LEN)}...'` : `'${v}'`;
+  } else if (v instanceof Date) {
+    s = toDateStr(v);
+  } else { // boolean, number
+    s = v.toString();
   }
   return s;
 }
