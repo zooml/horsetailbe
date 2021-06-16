@@ -2,13 +2,7 @@ import { FIELDS } from "../common/limits";
 import * as doc from '../models/doc';
 import * as desc from '../models/desc';
 import * as rsc from './rsc';
-
-export type Get = {
-  uId?: string;
-  note?: string;
-  id?: string;
-  url?: string;
-};
+import { Get } from '../api/desc';
 
 export const POST_DEF: rsc.Def = [FIELDS.uId, FIELDS.note, FIELDS.id, FIELDS.url];
 

@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express';
-import { trimOrUndef } from '../utils/util';
 import ctchEx from '../controllers/ctchex';
-import { CFlds, Doc, Flds } from '../models/siteacct';
+import { CFlds, Doc } from '../models/siteacct';
 import * as descs from './descs';
 import * as doc from '../models/doc';
 import * as rsc from './rsc'
 import * as siteacct from '../models/siteacct';
+import { Get } from '../api/siteaccts';
 
 export const SEGMENT = 'siteaccts';
 export const router = express.Router();
@@ -16,15 +16,9 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId): CFlds => ({
   desc: descs.toFlds(o.desc, uId)
 });
 
-type Get = rsc.Get & {
-  uId: string;
-  name: string;
-  desc: descs.Get;
-};
-
-const fromDoc = (d: Doc) => ({
+const fromDoc = (d: Doc): Get => ({
   ...rsc.fromDoc(d),
-  uId: d.uId,
+  uId: d.uId.toHexString(),
   name: d.name,
   desc: descs.fromFlds(d.desc),
 });

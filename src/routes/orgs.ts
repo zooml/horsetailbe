@@ -11,15 +11,10 @@ import { FIELDS, RESOURCES } from '../common/limits';
 import { toBegOfDay, fromDate, begToday } from '../common/acctdate';
 import * as doc from '../models/doc';
 import ctchEx from '../controllers/ctchex';
+import { CloseGet, FundGet, Get, RoleGet, UserGet } from '../api/orgs';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
-
-type RoleGet = {
-  id: number;
-  uId: string;
-  at: number;
-};
 
 const fromRoleFlds = (f: RoleFlds): RoleGet => ({
   id: f.id,
@@ -27,24 +22,10 @@ const fromRoleFlds = (f: RoleFlds): RoleGet => ({
   at: fromDate(f.at)
 });
 
-type UserGet = {
-  id: string;
-  roles: RoleGet[];
-};
-
 const fromUserFlds = (f: UserFlds): UserGet => ({
   id: f.id.toHexString(),
   roles: f.roles.map(fromRoleFlds)
 });
-
-type FundGet = {
-  id: number;
-  tag: string;
-  begAt: number;
-  at: number;
-  desc: descs.Get;
-  actts: actts.Get[];
-};
 
 const fromFundFlds = (f: FundFields): FundGet => ({
   id: f.id,
@@ -55,13 +36,6 @@ const fromFundFlds = (f: FundFields): FundGet => ({
   actts: f.actts.map(actts.fromDoc)
 });
 
-type CloseGet = {
-  id: number;
-  endAt: number;
-  at: number;
-  desc: descs.Get;
-};
-
 const fromCloseFlds = (f: CloseFlds): CloseGet => ({
   id: f.id,
   endAt: fromDate(f.endAt),
@@ -69,28 +43,18 @@ const fromCloseFlds = (f: CloseFlds): CloseGet => ({
   desc: descs.fromFlds(f.desc)
 });
 
-type Get = rsc.Get & {
-  saId: string;
-  name: string;
-  begAt: number;
-  desc?: descs.Get;
-  users: UserGet[];
-  funds?: FundGet[];
-  clos?: CloseGet[];
-};
-
-const fromDoc = (d: Doc): Get => {
+const fromDoc = (d: Doc, detail?: boolean) => {
   const g: Get = {
     ...rsc.fromDoc(d),
     saId: d.saId.toHexString(),
     name: d.name,
     begAt: fromDate(d.begAt),
-    users: d.users.map(fromUserFlds),
+    desc: descs.fromFlds(d.desc)
   };
-  if (d.desc?.uId) g.desc = descs.fromFlds(d.desc);
-  if (d.funds) g.funds = d.funds.map(fromFundFlds);
-  if (d.clos) g.clos = d.clos.map(fromCloseFlds);
-return g;
+  if (detail) g.users = d.users?.map(fromUserFlds) ?? [];
+  if (detail) g.funds = d.funds?.map(fromFundFlds) ?? [];
+  if (detail) g.clos =d.clos?.map(fromCloseFlds) ?? [];
+  return g;
 };
 
 export const lastCloseEndAtFromCachedOrg = (res: Response): Date => {
@@ -142,14 +106,8 @@ const validPostLimits = async (f: CFlds) => {
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   const resDocs = await findActiveByUser(res.locals.uId);
-  if (Array.isArray(resDocs)) {
-    console.log('is array');
-    if ('map' in resDocs) {
-      console.log('has map');
-    }
-  }
   // TODO wrong path, test if getting by SA
-  res.json(resDocs?.map(fromDoc) ?? []);
+  res.json(resDocs?.map(d => fromDoc(d)) ?? []);
 }));
 
 router.get('/:id', ctchEx(async (req: Request, res: Response) => {
@@ -157,7 +115,7 @@ router.get('/:id', ctchEx(async (req: Request, res: Response) => {
   const oId: doc.ObjId = res.locals.oId;
   const d: Doc | undefined = res.locals.org;
   if (!d || d.st !== STATES.ACTIVE) throw new NotFound(req.path);
-  res.json(fromDoc(d));
+  res.json(fromDoc(d, true));
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
@@ -169,7 +127,8 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   const f = toValidCFlds(req.body, uId, saId);
   await validPostLimits(f);
   const d = await create(f);
-  res.json(fromDoc(d));
+  res.json(fromDoc(d, true));
 }));
+
 router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
 }));

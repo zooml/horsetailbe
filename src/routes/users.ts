@@ -10,18 +10,10 @@ import * as authz from './authz';
 import * as doc from '../models/doc';
 import { validStr } from '../common/validators';
 import ctchEx from '../controllers/ctchex';
+import { Get } from '../api/users';
 
 export const SEGMENT = 'users';
 export const router = express.Router();
-
-type Get = rsc.Get & {
-  email: string;
-  fName: string;
-  lName?: string;
-  st: number;
-  opts: {[k: string]: any};
-  desc: descs.Get;
-};
 
 const fromDoc = (d: Doc): Get => {
   const g: Get = {

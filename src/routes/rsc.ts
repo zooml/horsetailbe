@@ -5,13 +5,7 @@ import { CastError, ExtraFldsError, InternalError, MaxError, MinError, MissingEr
 import { ArrLimit, BoolLimit, DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
 import { trimOrUndef } from '../utils/util';
 import { Types } from 'mongoose';
-
-export type Get = {
-  id: string;
-  at: number;
-  upAt: number;
-  v: number;
-};
+import * as base from '../api/base';
 
 export type Def = Limit[];
 
@@ -94,7 +88,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
 
 export const normAndValid = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}) => normAndValidObj(def, o, subDefs);
 
-export const fromDoc = (d: doc.Doc): Get => ({
+export const fromDoc = (d: doc.Doc): base.Get => ({
   id: d._id.toHexString(),
   at: fromDate(d.at),
   upAt: fromDate(d.upAt),

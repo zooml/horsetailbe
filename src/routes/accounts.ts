@@ -11,34 +11,16 @@ import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
 import { begToday, fromDate, toDateStr } from '../common/acctdate';
 import { lastCloseEndAtFromCachedOrg } from './orgs';
+import { CloseGet, Get } from '../api/accounts';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
-
-type CloseGet = {
-  id: number;
-  fnId: number;
-  bal: number;
-};
 
 const fromCloseFlds = (f: CloseFlds): CloseGet => ({
   id: f.id,
   fnId: f.fnId,
   bal: f.bal
 });
-
-type Get = rsc.Get & {
-  oId: string;
-  num: number;
-  name: string;
-  begAt: number;
-  desc: descs.Get;
-  sumId?: string;
-  catId?: number;
-  isCr?: boolean;
-  clos: CloseGet[];
-  actts: actts.Get[];
-};
 
 const fromDoc = (d: Doc): Get => {
   const g: Get = {

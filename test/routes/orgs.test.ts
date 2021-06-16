@@ -105,9 +105,8 @@ describe('orgs integration test', () => {
     o = res.body[0];
     o.id.should.equal(oId);
     o.name.should.equal('my org');
-    should.not.exist(o.desc);
-    u = o.users[0];
-    u.id.should.equal(uId);
+    o.desc.should.eql({});
+    should.not.exist(o.users);
     should.not.exist(o.funds);
     should.not.exist(o.clos);
   })
