@@ -46,7 +46,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds =
     oId,
     num: o.num,
     name: o.name,
-    begAt: o.begAt || begToday(),
+    begAt: o.begAt ,
     desc: descs.toFlds(o.desc, uId),
     clos: [],
     actts: []

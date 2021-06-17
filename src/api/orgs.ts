@@ -29,17 +29,19 @@ export type CloseGet = {
   desc: desc.Get;
 };
 
-export type GetEx = {
+export type Core = {
   name: string;
   begAt: number;
-  desc: desc.Get;
 };
 
-export type Get = base.Get & GetEx & {
+export type Get = base.Get & Core & {
   saId: string;
-  users?: UserGet[];
+  users: UserGet[];
+  desc?: desc.Get;
   funds?: FundGet[];
   clos?: CloseGet[];
 };
 
-export type Post = GetEx;
+export type Post = Core & {
+  desc: desc.Post;
+}

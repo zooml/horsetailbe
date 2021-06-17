@@ -5,3 +5,7 @@ export type Get = {
   isAct: boolean;
   desc: desc.Get;
 };
+
+export type Post = {
+  desc: desc.Post
+};

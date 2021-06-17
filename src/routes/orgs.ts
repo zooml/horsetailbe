@@ -49,9 +49,9 @@ const fromDoc = (d: Doc, detail?: boolean) => {
     saId: d.saId.toHexString(),
     name: d.name,
     begAt: fromDate(d.begAt),
-    desc: descs.fromFlds(d.desc)
+    users: d.users?.map(fromUserFlds)
   };
-  if (detail) g.users = d.users?.map(fromUserFlds) ?? [];
+  if (detail) g.desc = descs.fromFlds(d.desc);
   if (detail) g.funds = d.funds?.map(fromFundFlds) ?? [];
   if (detail) g.clos =d.clos?.map(fromCloseFlds) ?? [];
   return g;
@@ -71,7 +71,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds 
     saId,
     name: o.name,
     st: STATES.ACTIVE,
-    begAt: o.begAt || begToday(),
+    begAt: o.begAt,
     desc: descs.toFlds(o.desc, uId),
     users: [{
       id: uId,
@@ -82,7 +82,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, saId: doc.ObjId): CFlds 
     funds: [{
       id: GENERAL_FUND.id,
       tag: GENERAL_FUND.tag,
-      begAt: toBegOfDay(at),
+      begAt: o.begAt,
       at,
       desc: {uId},
       actts: []}],

@@ -37,7 +37,7 @@ export type UserFlds = {
 export type FundFields = {
   readonly id: number;
   tag: string;
-  readonly begAt: Date;
+  begAt: Date;
   readonly at: Date;
   readonly desc: desc.Flds;
   readonly actts: actt.Flds[];
@@ -132,7 +132,9 @@ export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.o
   model.findById(id));
 
 export const findActiveByUser = async (uId: string): Promise<Doc[]> => doc.op(async () =>
-  model.find({'users.id': uId, st: STATES.ACTIVE}, {id: 1, saId: 1, name: 1, 'users.$': 1}));
+  model.find(
+    {'users.id': uId, st: STATES.ACTIVE},
+    {id: 1, at: 1, upAt: 1, v: 1, name: 1, saId: 1, begAt: 1, desc: 1, 'users.$': 1}));
 
 export const findActiveRolesForUser = async (oId: doc.ObjId, uId: doc.ObjId) => doc.op(async () => {
   const org = await model.findOne({_id: oId, 'users.id': uId, st: STATES.ACTIVE}, {'users.$': 1});

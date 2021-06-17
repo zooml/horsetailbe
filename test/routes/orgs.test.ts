@@ -18,6 +18,7 @@ export const createOrg = async (name: string) => {
     .set('Cookie', cookie.serialize('ses', ses))
     .send({
       name,
+      begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
       desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
     });
   res.should.have.status(200);
@@ -33,6 +34,7 @@ describe('orgs integration test', () => {
       .set('Cookie', cookie.serialize('ses', ses))
       .send({
         name: 'my org',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
       });
     res.should.have.status(200);
@@ -90,7 +92,7 @@ describe('orgs integration test', () => {
     u.id.should.equal(uId);
     u.roles.should.be.an('array');
     u.roles.should.have.lengthOf(1);
-    const r = u.roles[0];
+    let r = u.roles[0];
     r.id.should.equal(1);
     o.funds.should.be.an('array');
     o.funds.should.have.lengthOf(1);
@@ -105,8 +107,16 @@ describe('orgs integration test', () => {
     o = res.body[0];
     o.id.should.equal(oId);
     o.name.should.equal('my org');
-    o.desc.should.eql({});
-    should.not.exist(o.users);
+    o.begAt.should.equal(begAt);
+    o.users.should.be.an('array');
+    o.users.should.have.lengthOf(1);
+    u = o.users[0];
+    u.id.should.equal(uId);
+    u.roles.should.be.an('array');
+    u.roles.should.have.lengthOf(1);
+    r = u.roles[0];
+    r.id.should.equal(1);
+    should.not.exist(o.desc);
     should.not.exist(o.funds);
     should.not.exist(o.clos);
   })

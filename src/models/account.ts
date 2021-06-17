@@ -41,7 +41,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
   oId: {type: SObjectId, ref: ORG_NAME, required: true}, // org
   num: {type: Number, required: true},
   name: {type: String, required: true, trim: true},
-  begAt: Date,
+  begAt: {type: Date, required: true},
   desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},

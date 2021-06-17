@@ -1,20 +1,23 @@
 import * as base from './base';
 import * as desc from './desc';
 
-type GetEx = {
+type Core = {
   email: string;
   fName: string;
   lName?: string;
-  st: number;
-  opts: {[k: string]: any};
-  desc: desc.Get;
 };
 
-export type Get = base.Get & GetEx;
+export type Get = base.Get & Core & {
+  st: number;
+  desc: desc.Get;
+  opts: {[k: string]: any};
+};
 
 export type Creds = {
   email: string;
   pswd: string;
 };
 
-export type Post = Creds & GetEx;
+export type Post = Creds & Core & {
+  desc: desc.Post;
+};

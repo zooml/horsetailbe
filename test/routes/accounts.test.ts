@@ -37,6 +37,7 @@ describe('accounts integration test', () => {
       .send({
         num: 100,
         name: 'My Assets',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         // catId: 1,
         desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
       });
@@ -62,6 +63,7 @@ describe('accounts integration test', () => {
       .send({
         num: 100,
         name: 'My Assets',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         catId: 1,
         desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
       });
@@ -86,6 +88,7 @@ describe('accounts integration test', () => {
       .send({
         num: 210,
         name: 'Cash',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         sumId: acId,
         desc: {id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'}
       });
@@ -98,6 +101,7 @@ describe('accounts integration test', () => {
       .send({
         num: 110,
         name: 'Cash',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         sumId: acId,
         desc: {id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'}
       });
@@ -134,6 +138,7 @@ describe('accounts integration test', () => {
       .send({
         num: 100,
         name: 'My Assets',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         catId: 1,
         desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
       });
@@ -144,6 +149,7 @@ describe('accounts integration test', () => {
       .send({
         num: 100,
         name: 'My Liabilities',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         catId: 2,
       });
     res.should.have.status(400);
@@ -155,6 +161,7 @@ describe('accounts integration test', () => {
       .send({
         num: 2000,
         name: 'My Liabilities',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         catId: 2,
       });
     res.should.have.status(400);
@@ -166,6 +173,7 @@ describe('accounts integration test', () => {
       .send({
         num: 210,
         name: 'My Liabilities',
+        begAt: new Date('2021-06-15T00:00:00.000Z').getTime(),
         catId: 2,
       });
     res.should.have.status(400);
