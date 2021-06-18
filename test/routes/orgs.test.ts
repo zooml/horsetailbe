@@ -116,7 +116,7 @@ describe('orgs integration test', () => {
     u.roles.should.have.lengthOf(1);
     r = u.roles[0];
     r.id.should.equal(1);
-    should.not.exist(o.desc);
+    o.desc.should.eql({uId, id: 'ext id', note: 'this is a note', url: 'https://google.com'});
     should.not.exist(o.funds);
     should.not.exist(o.clos);
   })

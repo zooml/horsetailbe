@@ -11,7 +11,7 @@ import { FIELDS, RESOURCES } from '../common/limits';
 import { toBegOfDay, fromDate, begToday } from '../common/acctdate';
 import * as doc from '../models/doc';
 import ctchEx from '../controllers/ctchex';
-import { CloseGet, FundGet, Get, RoleGet, UserGet } from '../api/orgs';
+import { CloseGet, FundGet, Get, RoleGet, TldrGet, UserGet } from '../api/orgs';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
@@ -43,19 +43,20 @@ const fromCloseFlds = (f: CloseFlds): CloseGet => ({
   desc: descs.fromFlds(f.desc)
 });
 
-const fromDoc = (d: Doc, detail?: boolean) => {
-  const g: Get = {
+const tldrFromDoc = (d: Doc, detail?: boolean): TldrGet => ({
     ...rsc.fromDoc(d),
     saId: d.saId.toHexString(),
     name: d.name,
     begAt: fromDate(d.begAt),
+    desc: descs.fromFlds(d.desc),
     users: d.users?.map(fromUserFlds)
-  };
-  if (detail) g.desc = descs.fromFlds(d.desc);
-  if (detail) g.funds = d.funds?.map(fromFundFlds) ?? [];
-  if (detail) g.clos =d.clos?.map(fromCloseFlds) ?? [];
-  return g;
-};
+});
+
+const fromDoc = (d: Doc): Get => ({
+    ...tldrFromDoc(d),
+    funds: d.funds?.map(fromFundFlds) ?? [],
+    clos: d.clos?.map(fromCloseFlds) ?? []
+});
 
 export const lastCloseEndAtFromCachedOrg = (res: Response): Date => {
   const org: Doc = res.locals.org;
@@ -107,7 +108,7 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.validate(req, res, SEGMENT);
   const resDocs = await findActiveByUser(res.locals.uId);
   // TODO wrong path, test if getting by SA
-  res.json(resDocs?.map(d => fromDoc(d)) ?? []);
+  res.json(resDocs?.map(d => tldrFromDoc(d)) ?? []);
 }));
 
 router.get('/:id', ctchEx(async (req: Request, res: Response) => {
@@ -115,7 +116,7 @@ router.get('/:id', ctchEx(async (req: Request, res: Response) => {
   const oId: doc.ObjId = res.locals.oId;
   const d: Doc | undefined = res.locals.org;
   if (!d || d.st !== STATES.ACTIVE) throw new NotFound(req.path);
-  res.json(fromDoc(d, true));
+  res.json(fromDoc(d));
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
@@ -127,7 +128,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   const f = toValidCFlds(req.body, uId, saId);
   await validPostLimits(f);
   const d = await create(f);
-  res.json(fromDoc(d, true));
+  res.json(fromDoc(d));
 }));
 
 router.patch('/:id', ctchEx(async (req: Request, res: Response) => {

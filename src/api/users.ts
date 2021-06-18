@@ -7,11 +7,13 @@ type Core = {
   lName?: string;
 };
 
-export type Get = base.Get & Core & {
+export type Base = Core & { // no conversion needed for fields so these can be used in model
   st: number;
   desc: desc.Get;
   opts: {[k: string]: any};
 };
+
+export type Get = base.Get & Base;
 
 export type Creds = {
   email: string;

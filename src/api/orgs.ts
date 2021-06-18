@@ -34,12 +34,15 @@ export type Core = {
   begAt: number;
 };
 
-export type Get = base.Get & Core & {
+export type TldrGet = base.Get & Core & {
   saId: string;
+  desc: desc.Get;
   users: UserGet[];
-  desc?: desc.Get;
-  funds?: FundGet[];
-  clos?: CloseGet[];
+};
+
+export type Get = TldrGet & {
+  funds: FundGet[];
+  clos: CloseGet[];
 };
 
 export type Post = Core & {
