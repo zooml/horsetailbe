@@ -5,9 +5,9 @@
   "main": "dist/server.js",
   "scripts": {
     "prebuild": "tslint -c tslint.json -p tsconfig-build.json --fix",
-    "build": "tsc",
+    "build": "tsc --project tsconfig-build.json",
     "prestart": "npm run build",
-    "start": "node .",
+    "start": "node ./dist/server.js",
     "pretest": "tslint -c tslint.json -p tsconfig.json --fix",
     "test": "NODE_ENV=test ./node_modules/.bin/_mocha 'out-ide/test/**/*.test.js' --colors"
   },
@@ -38,6 +38,8 @@
     "@types/http-errors": "^1.8.0",
     "@types/mailgun-js": "^0.22.11",
     "@types/mocha": "^8.2.2",
+    "@types/mongodb": "^3.6.18",
+    "@types/mongoose": "^5.11.97",
     "@types/node": "^15.0.2",
     "@types/nodemailer": "^6.4.2",
     "@types/request-stats": "^3.0.0",

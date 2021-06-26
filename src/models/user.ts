@@ -97,7 +97,7 @@ export const authn = async (email: string, pswd: string): Promise<Doc | undefine
   return user;
 });
 
-export const create = async (f: CFlds): Promise<Doc> => doc.op(async () => 
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
   model.create(f));
 
 export const findById = async (id: doc.ObjId): Promise<Doc | undefined> => doc.op(async () =>

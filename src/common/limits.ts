@@ -5,6 +5,7 @@ export type LimitKind = 'string' | 'number' | 'boolean' | 'date' | 'objectid' | 
 export type Limit = {
   kind: LimitKind;
   name: string;
+  hint?: string;
 };
 
 export type LimitMinMax = Limit & {
@@ -39,7 +40,9 @@ export type ArrLimit = LimitMinMax & {
   req: boolean;
 };
 
-export const NAME_REGEXP = /^[0-9A-Za-z]+$/;
+// allow sp, ', -
+const NAME_REGEXP = /^[^!"#$%&()*+,./:;<=>?@[\\\]^_`{|}~]+$/;
+const NAME_HINT = 'no special characters';
 
 export const FIELDS = {
   tag: {kind: 'string', name: 'tag', min: 1, max: 16} as StrLimit,
@@ -49,11 +52,15 @@ export const FIELDS = {
     regex: /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/
   } as StrLimit,
   pswd: {kind: 'string', name: 'pswd', min: 8, max: 30,
-    regex: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/
+    regex: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/,
+    hint: 'at least: 1 a-z, 1 A-Z, 1 digit, 1 special, 8 chars'
   } as StrLimit,
+  signinPswd: {kind: 'string', name: 'pswd', min: 1, max: 30} as StrLimit,
   ePswd: {kind: 'string', name: 'ePswd', min: 8, max: 9999} as StrLimit,
-  fName: {kind: 'string', name: 'fName', min: 1, max: 20, regex: NAME_REGEXP} as StrLimit,
-  lName: {kind: 'string', name: 'lName', min: 0, max: 40, regex: NAME_REGEXP} as StrLimit,
+  fName: {kind: 'string', name: 'fName', min: 1, max: 20, regex: NAME_REGEXP,
+    hint: NAME_HINT} as StrLimit,
+  lName: {kind: 'string', name: 'lName', min: 0, max: 40, regex: NAME_REGEXP,
+    hint: NAME_HINT} as StrLimit,
   id: {kind: 'string', name: 'id', min: 0, max: 100} as StrLimit, // external id, note id numberic fields too
   url: {kind: 'string', name: 'url', min: 0, max: 400,
     regex: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/
@@ -65,7 +72,7 @@ export const FIELDS = {
 
   isCr: {kind: 'boolean', name: 'isCr', req: false} as BoolLimit,
 
-  begAt: {kind: 'date', name: 'begAt', dayBeg: true, req: true} as DateLimit,
+  begAt: {kind: 'date', name: 'begAt', dayBeg: true} as DateLimit,
 
   uId: {kind: 'objectid', name: 'uId', req: false} as ObjIdLimit,
   saId: {kind: 'objectid', name: 'saId', req: true} as ObjIdLimit,

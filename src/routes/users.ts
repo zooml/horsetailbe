@@ -11,6 +11,7 @@ import * as doc from '../models/doc';
 import { validStr } from '../common/validators';
 import ctchEx from '../controllers/ctchex';
 import { Get } from '../api/users';
+import { logInfo } from '../platform/logger';
 
 export const SEGMENT = 'users';
 export const router = express.Router();
@@ -70,6 +71,7 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
+  logInfo(JSON.stringify(req.body));
   await authz.validate(req, res, SEGMENT);
   // res.locals.uId will exist if created for invitation
   const uId: doc.ObjId | undefined = res.locals.uId;

@@ -36,6 +36,7 @@
       "skipFiles": [
         "<node_internals>/**"
       ],
+      "preLaunchTask": "tsc: build",
       "program": "${workspaceFolder}/dist/server.js",
       "outputCapture": "std",
       "env": {

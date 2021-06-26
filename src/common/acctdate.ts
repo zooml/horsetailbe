@@ -14,7 +14,7 @@ export const toDate = (v: any): any => {
   return new Date(v);
 };
 
-export const fromDate = (v: Date | undefined): number | undefined => v?.getTime();
+export const fromDate = (v: Date): number => v.getTime();
 
 export const toDateStr = (v: Date): string => {
   // YYYY-MM-DDTHH:mm:ss.sssZ

@@ -46,5 +46,5 @@ export type Get = TldrGet & {
 };
 
 export type Post = Core & {
-  desc: desc.Post;
+  desc?: desc.Post;
 }

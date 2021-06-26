@@ -10,6 +10,7 @@ export const router = express.Router();
 router.post('/', ctchEx(async (req: Request, res: Response) => {
   // no need to authz.validate, this is authn
   const ses = req.body;
+  // SECURITY: provide only minimal info (e.g. no length of pswd)
   if (!ses.email) throw new MissingError('email');
   if (!ses.pswd) throw new MissingError('pswd');
   const u = await user.authn(ses.email, ses.pswd);

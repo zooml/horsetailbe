@@ -1,6 +1,7 @@
 import { Document, Types } from 'mongoose';
 import { AppError, CastError, DupError, DbValidationError, FmtError } from '../common/apperrs';
 import { tryCatch } from '../utils/util';
+import { MongoError } from 'mongodb';
 
 export type ObjId = Types.ObjectId;
 
@@ -27,15 +28,20 @@ const hndlErr = (err: any): never => {
   if (!(err instanceof AppError)) {
     if (err.name === 'CastError') {
       error = new CastError(err.path, err.value);
-    } else if (err.name === 'MongoError') {
+    } else if (err instanceof MongoError) {
       if (err.code === 11000) {
         // message: E11000 duplicate key error dup key: { : "a@b.co" }
-        // "E11000 duplicate key error dup key: { : ObjectId('60c66c296e071a1f8451ffc5'), : 100 }"
-        const m = err.message.match(/\{\s*:\s*(.*?)\s*\}/);
-        let v = m ? m[1].replaceAll('"', '') : '<unknown>';
+        // E11000 duplicate key error collection: horsetaildb.users index: email_1 dup key: { email: "a@b.co" }
+        // looks like keyValue field is going away, so don't expect it:
+        //   https://jira.mongodb.org/browse/SERVER-50454
+
+        // TODO compound key, e.g. {foo: "abc", bar: 2}??? test with org name
+        const m = err.message.match(/\{\s*(\S*?):\s*(.*?)\s*\}/);
+
+        let v = m ? m[2].replace(/"/g, '') : '<unknown>';
         // compound key index, remove the objid since that doesn't help
         if (v.startsWith('ObjectId')) v = v.replace(/ObjectId.*?:\s/, '');
-        error = new DupError('<index>', v);
+        error = new DupError(m[1] ? m[1] : '<index>', v);
       }
     } else if (err.name === 'ValidationError') {
       // we should have caught these already

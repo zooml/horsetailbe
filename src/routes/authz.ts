@@ -51,6 +51,7 @@ const cacheRoles = async (res: Response): Promise<number[]> => {
   const uId: doc.ObjId = res.locals.uId;
 
   // TODO check role of uId
+
   return [];
 }
 
@@ -106,15 +107,15 @@ export const validate = async (req: Request, res: Response, rsc: string, opts?: 
 
         allowed = true; // TODO remove!!!!!!!!
         if (meth === 'POST') {
-          // allow: 
-          // allowed = 
+          // allow:
+          // allowed =
         } else if (meth === 'PATCH') {
-          // allow: 
-          // allowed = 
+          // allow:
+          // allowed =
         } else if (meth === 'GET') {
           if (oId) {
             const roles = await cacheRoles(res);
-            
+
             // TODO check roles
 
           } else {
@@ -131,16 +132,16 @@ export const validate = async (req: Request, res: Response, rsc: string, opts?: 
 
         if (meth === 'POST') {
           // org needed for validation
-          // allow: 
-          // allowed = 
+          // allow:
+          // allowed =
           await cacheOrg(res);
         } else if (meth === 'PATCH') {
-          // allow: 
-          // allowed = 
+          // allow:
+          // allowed =
         } else if (meth === 'GET') {
           if (oId) {
             const roles = await cacheRoles(res);
-            
+
             // TODO check roles
 
           } else {

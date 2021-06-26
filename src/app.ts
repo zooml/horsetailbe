@@ -44,6 +44,8 @@ app.use(apiV1Prefix + orgs.SEGMENT, orgs.router);
 app.use(apiV1Prefix + accounts.SEGMENT, accounts.router);
 app.use(apiPrefix, authz.notFound(apiPrefix));
 
+
+
 // TODO '*' not found html page, or check for content type (json vs html)?
 
 // error handler
