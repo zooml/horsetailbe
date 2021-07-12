@@ -6,6 +6,7 @@ import { MongoError } from 'mongodb';
 export type ObjId = Types.ObjectId;
 
 const regex = /^[0-9a-fA-F]{24}$/;
+
 export const validObjId = (id: string, name: string) => {
   if (!id || !regex.test(id)) throw new FmtError(name, '24 hex chars');
 }

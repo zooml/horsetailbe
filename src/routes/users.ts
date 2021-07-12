@@ -37,7 +37,7 @@ const toCFlds = async (o: {[k: string]: any}, uId: doc.ObjId | undefined, pswd: 
     email: o.email,
     ePswd: await encryptPswd(pswd),
     fName: o.fName,
-    st: STATES.ACTIVE.id,
+    st: STATES.ACTIVE.id, // TODO WAIT_CONF
     opts: {},
     desc: descs.toFlds(o.desc, uId)
   };
@@ -55,7 +55,7 @@ const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId | undefined): 
 };
 
 router.get('/', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT);
+  await authz.isAllowed(req, res, SEGMENT);
   const uId: doc.ObjId = res.locals.uId;
   if (res.locals.oId) {
     // TODO only active users!!!!!!!
@@ -71,13 +71,12 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
-  logInfo(JSON.stringify(req.body));
-  await authz.validate(req, res, SEGMENT);
+  await authz.isAllowed(req, res, SEGMENT);
   // res.locals.uId will exist if created for invitation
   const uId: doc.ObjId | undefined = res.locals.uId;
   const f = await toValidCFlds(req.body, uId);
   const resDoc =  await create(f);
   await siteaccts.create(resDoc._id, f.fName); // TODO move to email confirm
   session.clear(res)
-    .json(fromDoc(resDoc));
+    .status(204);
 }));

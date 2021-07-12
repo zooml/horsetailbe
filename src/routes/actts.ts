@@ -1,6 +1,6 @@
 import * as descs from './descs';
 import * as actt from '../models/actt';
-import { fromDate } from '../common/acctdate';
+import { fromDate } from '../utils/svrdate';
 import { Get } from '../api/actt';
 
 export const fromDoc = (f: actt.Flds): Get => ({

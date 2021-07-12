@@ -27,7 +27,18 @@ app.disable('etag');
 app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-if (process.env.NODE_ENV !== 'production') app.use(cors());
+// https://www.telerik.com/blogs/dealing-with-cors-in-create-react-app
+// in client, just set package.json: "proxy": "http://localhost:5000"
+// instead of: ........
+// if (process.env.NODE_ENV !== 'production') app.use(cors()); // TODO needed????
+// if (process.env.NODE_ENV !== 'production') app.use(cors({
+//   origin: 'http://localhost:3000',
+//   credentials: true,
+//   allowedHeaders: ['Accept', 'Accept-Encoding', 'Accept-Language', 'Content-Type',
+//     'Content-Length', 'Connection', 'Host', 'Origin', 'Referer', 'Cookie',
+//     'X-Requested-With', 'user-agent', 'sec-ch-ua', 'sec-ch-ua-mobile',
+//     'sec-fetch-dest', 'sec-fetch-mode', 'sec-fetch-site']
+// }));
 
 app.use(logger.middleware);
 
@@ -43,8 +54,6 @@ app.use(apiV1Prefix + siteaccts.SEGMENT, siteaccts.router);
 app.use(apiV1Prefix + orgs.SEGMENT, orgs.router);
 app.use(apiV1Prefix + accounts.SEGMENT, accounts.router);
 app.use(apiPrefix, authz.notFound(apiPrefix));
-
-
 
 // TODO '*' not found html page, or check for content type (json vs html)?
 

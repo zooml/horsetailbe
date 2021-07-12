@@ -1,8 +1,15 @@
 /* tslint:disable:max-classes-per-file */
 import { logError, logWarn } from "../platform/logger";
-import { toDateStr } from "./acctdate";
 
 const MAX_STR_V_LEN = 49;
+const sUtcDayBegEnd = '00:00:00.000Z';
+
+const toDateStr = (v: Date): string => {
+  // YYYY-MM-DDTHH:mm:ss.sssZ
+  const s = v.toISOString();
+  if (s.endsWith(sUtcDayBegEnd)) return s.substring(0, 10);
+  return s.slice(0, 19).replace('T', ' ');
+};
 
 export class AppError extends Error {
   statusCode: number;

@@ -9,7 +9,7 @@ import * as authz from './authz';
 import * as rsc from './rsc';
 import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
-import { begToday, fromDate, toDateStr } from '../common/acctdate';
+import { fromDate, toDateStr } from '../utils/svrdate';
 import { lastCloseEndAtFromCachedOrg } from './orgs';
 import { CloseGet, Get } from '../api/accounts';
 
@@ -140,7 +140,7 @@ const validPostLimits = async (f: CFlds) => {
 };
 
 router.get('/', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT);
+  await authz.isAllowed(req, res, SEGMENT);
   // TODO page limit
   const oId: doc.ObjId = res.locals.oId;
   const resDocs = await findByOrg(oId);
@@ -148,7 +148,7 @@ router.get('/', ctchEx(async (req: Request, res: Response) => {
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT);
+  await authz.isAllowed(req, res, SEGMENT);
   const uId: doc.ObjId = res.locals.uId;
   const oId: doc.ObjId = res.locals.oId;
   const lastCloseEndAt = lastCloseEndAtFromCachedOrg(res);
@@ -159,7 +159,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
 }));
 
 router.patch('/:id', ctchEx(async (req: Request, res: Response) => {
-  await authz.validate(req, res, SEGMENT);
+  await authz.isAllowed(req, res, SEGMENT);
 
   // TODO
   // TODO only 1 actt per close!!!!

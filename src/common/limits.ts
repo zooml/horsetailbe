@@ -49,7 +49,7 @@ export const FIELDS = {
   name: {kind: 'string', name: 'name', min: 1, max: 40} as StrLimit,
   note: {kind: 'string', name: 'note', min: 0, max: 800} as StrLimit,
   email: {kind: 'string', name: 'email', min: 1, max: 64,
-    regex: /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/
+    regex: /^(([^<>()[\].,;:\s@"]+(\.[^<>()[\].,;:\s@"]+)*)|(".+"))@(([^<>()[\].,;:\s@"]+.)+[^<>()[\].,;:\s@"]{2,})$/
   } as StrLimit,
   pswd: {kind: 'string', name: 'pswd', min: 8, max: 30,
     regex: /(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9])/,
@@ -92,7 +92,7 @@ export const FIELDS = {
 export const RESOURCES = {
   accounts: {perOrg: {max: 400}},
   txndocs: {perOrg: {max: 20000}},
-  orgs: {perSA: {max: 5}, perUser: {max: 10}}, // maxPerUser is max number user can join
+  orgs: {perSA: {max: 3}, perUser: {max: 10}}, // maxPerUser is max number user can join
 };
 
 const LIMITS = {

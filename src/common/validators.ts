@@ -1,6 +1,5 @@
 import { CastError, DayBegError, FmtError, MaxError, MinError, MissingError } from "./apperrs";
 import { BoolLimit, DateLimit, NumLimit, StrLimit } from "./limits";
-import * as acctdate from './acctdate';
 
 export const isStr = (v: any) => typeof v === 'string';
 export const isNum = (v: any) => typeof v === 'number';
@@ -16,6 +15,9 @@ export const toCap = (v: string) => {
   if (!v) return v;
   return v.charAt(0).toLocaleUpperCase().concat(v.slice(1));
 };
+
+const sUtcDayBegEnd = '00:00:00.000Z';
+const validDayBeg = (v: Date) => v.toISOString().endsWith(sUtcDayBegEnd);
 
 export const validStr = (lim: StrLimit, thro: boolean, v: any) => {
   if (!v) { // '' or undefined is OK only if min === 0
@@ -94,7 +96,7 @@ export const validDate = (lim: DateLimit, thro: boolean, v: any) => {
     if (thro) throw new CastError(lim.name, v);
     return false;
   }
-  if (lim.dayBeg && !acctdate.validDayBeg(v)) {
+  if (lim.dayBeg && !validDayBeg(v)) {
     if (thro) throw new DayBegError(lim.name);
     return false;
   }

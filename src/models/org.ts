@@ -13,10 +13,6 @@ export const STATES = Object.freeze({
   DELETED: 2
 });
 
-export const STD_ROLE_IDS = Object.freeze({
-  SUPER: 1, // all access
-  AUDIT: 2 // readonly
-});
 
 export const GENERAL_FUND = Object.freeze({
   id: 1,

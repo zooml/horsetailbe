@@ -1,7 +1,9 @@
 import app from './app';
+// import https from 'https'; TODO
 import http from 'http';
 import logger, { logInfo } from './platform/logger';
 import requestStats from 'request-stats';
+// import fs from 'fs';
 
 const normalizePort = (val: any) => {
   const port = parseInt(val, 10);
@@ -14,9 +16,15 @@ const normalizePort = (val: any) => {
   return false;
 }
 
+// const port = normalizePort(process.env.PORT || '443'); // TODO port???
 const port = normalizePort(process.env.PORT || '5000'); // TODO port???
 app.set('port', port);
 
+// const opts = {
+//   key: fs.readFileSync(__dirname + '/server.key', 'utf8'),
+//   cert: fs.readFileSync(__dirname + '/server.crt', 'utf8'),
+// };
+// const server = https.createServer(opts, app).listen(port);
 const server = http.createServer(app).listen(port);
 server.on('error', (error: {[k: string]: any}) => {
   if (error.syscall !== 'listen') {

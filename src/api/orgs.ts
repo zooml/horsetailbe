@@ -2,6 +2,11 @@ import * as base from './base';
 import * as desc from './desc';
 import * as actt from './actt';
 
+export const STD_ROLE_IDS = Object.freeze({
+  SUPER: 1, // all access
+  AUDIT: 2 // readonly
+});
+
 export type RoleGet = {
   id: number;
   uId: string;

@@ -2,28 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import { ForbiddenError } from '../controllers/errors';
 import * as sessions from './sessions';
 import * as doc from '../models/doc';
-import * as user from '../models/user';
 import * as users from './users';
 import * as siteaccts from './siteaccts';
 import * as accounts from './accounts';
 import * as txndocs from './txndocs';
 import * as org from '../models/org';
 import * as orgs from './orgs';
-import { findActiveRolesForUser, STD_ROLE_IDS } from '../models/org';
 import { ParsedQs } from 'qs';
-import { InternalError, MissingError } from '../common/apperrs';
+import { MissingError } from '../common/apperrs';
+import { isReadMethod } from '../common/authzutil';
 
 const OID_HDR = 'x-oid';
-
-const isReadMethod = (req: Request) => { // TODO needed?
-  switch (req.method) {
-    case 'GET':
-    case 'HEAD':
-    case 'OPTIONS':
-      return true;
-  }
-  return false;
-};
 
 const qs = (v: string | ParsedQs | string[] | ParsedQs[]) => typeof v === 'string' ? v : undefined;
 
@@ -55,7 +44,7 @@ const cacheRoles = async (res: Response): Promise<number[]> => {
   return [];
 }
 
-export const validate = async (req: Request, res: Response, rsc: string, opts?: ValidOpts) => {
+export const isAllowed = async (req: Request, res: Response, rsc: string, opts?: ValidOpts) => {
   let allowed = false;
   if (rsc === sessions.SEGMENT) {
     // no perms required for sign in/out sessions (note sign in requires perms and active)
@@ -83,7 +72,7 @@ export const validate = async (req: Request, res: Response, rsc: string, opts?: 
     }
     res.locals.oId = oId;
     const meth = req.method;
-    const isRead = isReadMethod(req);
+    const isRead = isReadMethod(req.method);
 
     // const roles = await findActiveRolesForUser(oId, uId);
     // res.locals.roles = roles;

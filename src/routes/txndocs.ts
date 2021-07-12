@@ -4,7 +4,7 @@ import { Get } from '../api/txndocs';
 import * as descs from './descs';
 import * as authz from './authz';
 import { AmtFlds, Doc } from '../models/txndoc';
-import { fromDate } from '../common/acctdate';
+import { fromDate } from '../utils/svrdate';
 
 export const SEGMENT = 'txndocs';
 export const router = express.Router();

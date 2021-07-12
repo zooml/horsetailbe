@@ -61,7 +61,17 @@ export const middleware = (pathPrefix: string) => [
 ];
 
 export const set = (req: Request, res: Response, uId: string): Response =>
-  res.cookie('ses', createCookie(req, uId), {signed: true, httpOnly: true});
+// {
+//   res.setHeader('Set-Cookie', 'ses=s:NjBkN2YzNjdmZmE3NGFiNGFmY2M0MzM0Ozo6MTsxNjI1OTM4MTUwLjM1OA==.fYCr1JgYR+omnzyB7Pjx7mMHe0UGcgJiGGZbJie90NY; Max-Age=172800; Path=/; Expires=Sat, 10 Jul 2021 17:29:10 GMT; HttpOnly; SameSite=None; Secure');
+//   return res;
+// };
+  res.cookie('ses', createCookie(req, uId), {
+    maxAge: LIMITS.session.maxAge * 1000,
+    signed: true,
+    // domain: 'cloudforest.ga',
+    // sameSite: false, // TODO should be 'none'
+    // secure: true, // requires https????
+    httpOnly: true});
 
 export const clear = (res: Response): Response =>
   res.clearCookie('ses');
