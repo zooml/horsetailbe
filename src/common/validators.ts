@@ -1,5 +1,5 @@
-import { CastError, DayBegError, FmtError, MaxError, MinError, MissingError } from "./apperrs";
-import { BoolLimit, DateLimit, NumLimit, StrLimit } from "./limits";
+import { CastError, DayBegError, FmtError, MaxError, MinError, MissingError, ValueError } from "./apperrs";
+import { BoolLimit, ChoiceLimit, DateLimit, NumLimit, StrLimit } from "./limits";
 
 export const isStr = (v: any) => typeof v === 'string';
 export const isNum = (v: any) => typeof v === 'number';
@@ -98,6 +98,19 @@ export const validDate = (lim: DateLimit, thro: boolean, v: any) => {
   }
   if (lim.dayBeg && !validDayBeg(v)) {
     if (thro) throw new DayBegError(lim.name);
+    return false;
+  }
+  return true;
+};
+
+export const validChoice = (lim: ChoiceLimit, thro: boolean, v: any) => {
+  if (v === undefined) {
+    if (!lim.req) return true;
+    if (thro) throw new MissingError(lim.name);
+    return false;
+  }
+  if (lim.choices[v] === undefined) {
+    if (thro) throw new ValueError(lim.name, v, 'is not a valid choice');
     return false;
   }
   return true;

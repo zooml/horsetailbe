@@ -1,8 +1,8 @@
 import * as doc from '../models/doc';
 import { fromDate, toDate } from '../utils/svrdate';
-import { isArr, isObj, isStr, toBool, validBool, validDate, validNum, validStr } from '../common/validators';
+import { isArr, isObj, isStr, toBool, validBool, validChoice, validDate, validNum, validStr } from '../common/validators';
 import { CastError, ExtraFldsError, InternalError, MaxError, MinError, MissingError } from '../common/apperrs';
-import { ArrLimit, BoolLimit, DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
+import { ArrLimit, BoolLimit, ChoiceLimit, DateLimit, Limit, NumLimit, ObjIdLimit, StrLimit } from '../common/limits';
 import { trimOrUndef } from '../utils/util';
 import { Types } from 'mongoose';
 import * as base from '../api/base';
@@ -60,13 +60,16 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
       case 'objectid':
         v = normAndValidObjId(lim as ObjIdLimit, v);
         break;
-        case 'array':
-          validArray(lim as ArrLimit, v);
-          break;
-        case 'object':
+      case 'array':
+        validArray(lim as ArrLimit, v);
+        break;
+      case 'object':
         const subDef = subDefs ? subDefs[lim.name] : undefined;
         if (!subDef) throw new InternalError({message: `unknown subobject limit ${lim.name}`});
         normAndValidObj(subDef, v, subDefs, lim.name);
+        break;
+      case 'choice':
+        validChoice(lim as ChoiceLimit, true, v);
         break;
       default:
         throw new InternalError({message: `unknown limit kind ${lim.kind}`});

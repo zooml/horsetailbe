@@ -10,7 +10,7 @@ import * as org from '../models/org';
 import * as orgs from './orgs';
 import { ParsedQs } from 'qs';
 import { MissingError } from '../common/apperrs';
-import { isReadMethod } from '../common/authzutil';
+import { isReadMethod } from '../common/authzrules';
 
 const OID_HDR = 'x-oid';
 

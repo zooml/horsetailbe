@@ -28,7 +28,7 @@ describe('sessions integration test', () => {
     const email = 'a@b.co';
     const pswd = 'aa11AA..';
     let res = await svr.post(USERS_PATH).send({email, pswd, fName: 'joe'});
-    res.should.have.status(200);
+    res.should.have.status(204);
     res = await svr.post(PATH).send({email, pswd});
     res.should.have.status(204);
     const setCookies = res.header['set-cookie'];
@@ -40,7 +40,7 @@ describe('sessions integration test', () => {
     const email = 'a@b.co';
     const pswd = 'aa11AA..';
     let res = await svr.post(USERS_PATH).send({email, pswd, fName: 'joe'});
-    res.should.have.status(200);
+    res.should.have.status(204);
     res = await svr.post(PATH).send({email, pswd});
     res.should.have.status(204);
     const ses = cookie.parse(res.header['set-cookie'][0]).ses;

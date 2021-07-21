@@ -78,5 +78,6 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   const resDoc =  await create(f);
   await siteaccts.create(resDoc._id, f.fName); // TODO move to email confirm
   session.clear(res)
-    .status(204);
+    .status(204)
+    .send();
 }));

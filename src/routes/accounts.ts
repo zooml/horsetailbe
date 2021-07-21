@@ -2,7 +2,6 @@ import express, {Request, Response} from 'express';
 import ctchEx from '../controllers/ctchex';
 import {DependentError, DupError, LimitError, RefError, ValueError} from '../common/apperrs';
 import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg, findByOrg, create } from '../models/account';
-import { findAcctCatById } from '../common/acctcat';
 import * as descs from './descs';
 import * as actts from './actts';
 import * as authz from './authz';
@@ -11,7 +10,7 @@ import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
 import { fromDate, toDateStr } from '../utils/svrdate';
 import { lastCloseEndAtFromCachedOrg } from './orgs';
-import { CloseGet, Get } from '../api/accounts';
+import { CATEGORIES, CloseGet, Get } from '../api/accounts';
 
 export const SEGMENT = 'accounts';
 export const router = express.Router();
@@ -116,7 +115,7 @@ const validate = async (f: CFlds, lastCloseEndAt: Date) => {
     if (!sum || !acctIsActiveAt(sum, f.begAt)) throw new RefError('sumId', 'account', f.sumId);
     await validateNum(f, sum.num);
   } else { // general account
-    const cat = findAcctCatById(f.catId); // f.catId is defined
+    const cat = CATEGORIES[f.catId]; // f.catId is defined
     if (!cat) throw new RefError('catId', 'category', f.catId);
     if (await exists({oId: f.oId, catId: f.catId})) throw new DupError('catId', f.catId);
     if (f.isCr !== undefined && f.isCr !== cat.isCr) throw new ValueError('isCr', f.isCr, 'must be same as category or not set');
