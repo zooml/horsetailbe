@@ -11,9 +11,9 @@ export const CAT_IDS = Object.freeze({
 });
 
 export type Category = {
-  id: number;
-  tag: string;
-  isCr: boolean;
+  readonly id: number;
+  readonly tag: string;
+  readonly isCr: boolean;
 };
 
 export const CATEGORIES: {[key: number]: Category} = Object.freeze({
@@ -30,15 +30,23 @@ export type CloseGet = {
   bal: number;
 };
 
-export type Get = base.Get & {
-  oId: string;
+export type Core = {
   num: number;
   name: string;
   begAt: number;
-  desc: desc.Get;
   sumId?: string;
   catId?: number;
   isCr?: boolean;
+};
+
+export type Get = base.Get & Core & {
+  oId: string;
+  desc: desc.Get;
   clos: CloseGet[];
   actts: actt.Get[];
+};
+
+export type Post = Core & {
+  oId?: string;
+  desc?: desc.Post;
 };

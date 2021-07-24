@@ -1,6 +1,7 @@
 import { CATEGORIES } from "../api/accounts";
+import { toCap } from "./validators";
 
-export type LimitKind = 'string' | 'number' | 'boolean' | 'date' | 'objectid' | 'object' | 'array' | 'choice';
+export type LimitKind = 'string' | 'number' | 'boolean' | 'date' | 'currency' | 'objectid' | 'object' | 'array' | 'choice';
 
 export type Limit = {
   kind: LimitKind;
@@ -30,6 +31,10 @@ export type DateLimit = Limit & {
   dayBeg?: boolean;
 };
 
+export type CurrencyLimit = Limit & {
+  req: boolean;
+};
+
 export type ObjIdLimit = Limit & {
   req: boolean;
 };
@@ -40,9 +45,10 @@ export type ArrLimit = LimitMinMax & {
   req: boolean;
 };
 
-type Choices = {
+export type Choices = {
   [k: number]: string; // values to labels
-}
+};
+
 export type ChoiceLimit = Limit & {
   req: boolean;
   choices: Choices;
@@ -76,15 +82,21 @@ export const FIELDS = {
 
   num: {kind: 'number', name: 'num', min: 100, max: 999999, req: true} as NumLimit,
   st: {kind: 'number', name: 'st', min: 1, max: 99999, req: true} as NumLimit,
+  fnId: {kind: 'number', name: 'fnId', min: 1, max: 99999, req: true} as NumLimit,
+  tdTId: {kind: 'number', name: 'tdTId', min: 1, max: 99999, req: true} as NumLimit,
 
   isCr: {kind: 'boolean', name: 'isCr', req: false} as BoolLimit,
 
   begAt: {kind: 'date', name: 'begAt', dayBeg: true} as DateLimit,
+  dueAt: {kind: 'date', name: 'dueAt', dayBeg: true, req: false} as DateLimit,
+
+  amt: {kind: 'currency', name: 'amt', req: true} as CurrencyLimit,
 
   uId: {kind: 'objectid', name: 'uId', req: false} as ObjIdLimit,
   saId: {kind: 'objectid', name: 'saId', req: true} as ObjIdLimit,
   oId: {kind: 'objectid', name: 'oId', req: true} as ObjIdLimit,
   sumId: {kind: 'objectid', name: 'sumId', req: false} as ObjIdLimit,
+  acId: {kind: 'objectid', name: 'acId', req: true} as ObjIdLimit,
 
   desc: {kind: 'object', name: 'desc'} as ObjLimit,
   opts: {kind: 'object', name: 'opts'} as ObjLimit,
@@ -93,11 +105,11 @@ export const FIELDS = {
   clos: {kind: 'array', name: 'clos', min: 0, max: 240, req: true} as ArrLimit, // number of closing entries
   users: {kind: 'array', name: 'users', min: 1, max: 3, req: true} as ArrLimit, // users/org
   funds: {kind: 'array', name: 'funds', min: 1, max: 100, req: true} as ArrLimit, // defined funds (act & sus)/org
-  amts: {kind: 'array', name: 'amts', min: 2, max: 20, req: true} as ArrLimit, // amounts/txndoc
+  adjs: {kind: 'array', name: 'adjs', min: 2, max: 20, req: true} as ArrLimit, // txndoc
 
   catId: {kind: 'choice', name: 'catId', req: false, choices: Object.values(CATEGORIES)
-    .reduce((p, c) => {p[c.id] = c.tag; return p;}, {} as Choices),
-    hint: 'General summary accounts must be classified.'} as ChoiceLimit,
+    .reduce((p, c) => {p[c.id] = toCap(c.tag); return p;}, {} as Choices),
+    hint: 'General summary accounts are classified.'} as ChoiceLimit,
 };
 
 export const RESOURCES = {

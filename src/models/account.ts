@@ -94,3 +94,6 @@ export const findOneGANum = async (oId: doc.ObjId): Promise<number | undefined> 
 
 export const countPerOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
   model.countDocuments({oId}));
+
+export const findByIds = async (ids: doc.ObjId[], proj?: {[k: string]: number}): Promise<Doc[]> => doc.op(async () =>
+  model.find({_id: {$in: ids}}, proj));

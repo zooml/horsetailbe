@@ -5,11 +5,11 @@ import { NAME as ACCOUNT_NAME } from './account';
 import * as doc from './doc';
 import * as desc from './desc';
 
-export const NAME = 'TxnDoc';
+export const NAME = 'Txndoc';
 
 const SObjectId = Schema.Types.ObjectId;
 
-export type AmtFlds = {
+export type AdjCFlds = {
   acId: doc.ObjId;
   fnId: number;
   amt: number;
@@ -18,11 +18,13 @@ export type AmtFlds = {
 export type CFlds = {
   oId: doc.ObjId;
   begAt: Date;
-  kind: number;
+  tdTId: number;
   desc: desc.Flds;
-  amts: AmtFlds[],
+  adjs: AdjCFlds[],
   dueAt?: Date;
 };
+
+export type AdjFlds = AdjCFlds;
 
 export type Flds = doc.Flds & CFlds;
 
@@ -38,7 +40,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
     id: {type: String, trim: true},
     url: {type: String, trim: true}
   },
-  amts: [{
+  adjs: [{
     acId: {type: SObjectId, ref: ACCOUNT_NAME, required: true},
     fnId: {type: Number, required: true},
     amt: {type: Number, required: true}
@@ -52,8 +54,15 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
 
 schema
   .index({oId: 1, begAt: 1, at: 1}, {unique: true})
-  .index({oId: 1, 'amts.acId': 1});
+  .index({oId: 1, 'adjs.acId': 1});
 
-export const Model = mongoose.model(NAME, schema);
+const model = mongoose.model(NAME, schema);
 
-// TODO https://mongoosejs.com/docs/api.html#query_Query-estimatedDocumentCount
+export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
+  model.create(f));
+
+export const findByOrg = async (oId: doc.ObjId): Promise<Doc[]> => doc.op(async () =>
+  model.find({oId}).sort({begAt: -1, at: -1}));
+
+export const countForOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
+  model.countDocuments({oId}));

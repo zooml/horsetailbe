@@ -28,10 +28,14 @@ export type ValidOpts = {
   invite?: boolean; // user POST for invite
 };
 
+const cachedOId = (res: Response) => {
+  const oId = res.locals.oId;
+  if (!oId) throw new MissingError('oId in header or query');
+  return oId;
+}
+
 const cacheOrg = async (res: Response): Promise<org.Doc> => {
-  if (res.locals.oId && !res.locals.org) {
-    res.locals.org = await org.findById(res.locals.oId);
-  }
+  if (!res.locals.org) res.locals.org = await org.findById(cachedOId(res));
   return res.locals.org;
 }
 
@@ -53,7 +57,7 @@ export const isAllowed = async (req: Request, res: Response, rsc: string, opts?:
   } else {
     // the valid session cookie has already stored the uId
     // note the session is not checked for "sessions" path and is optional for POST "users"
-    // a valid session is assumed to indicate valid user--TODO SECURITY: need was to suspend users immediately
+    // a valid session is assumed to indicate valid user--TODO SECURITY: need to suspend users immediately
     // TODO could put this here (or cache user for PERF)
     // if (!await user.activeExists(uId)) throw new ForbiddenError(uId.toHexString(), req.method, rsc, rscId, 'user is not active');
     const uId: doc.ObjId = res.locals.uId;
@@ -115,12 +119,11 @@ export const isAllowed = async (req: Request, res: Response, rsc: string, opts?:
         }
         break;
       case accounts.SEGMENT:
-        if (!oId) throw new MissingError('oId in header or query')
+        cachedOId(res);
 
         allowed = true; // TODO remove!!!!!!!!
 
         if (meth === 'POST') {
-          // org needed for validation
           // allow:
           // allowed =
           await cacheOrg(res);
@@ -141,8 +144,12 @@ export const isAllowed = async (req: Request, res: Response, rsc: string, opts?:
         }
         break;
       case txndocs.SEGMENT:
-        if (!oId) throw new MissingError('oId in header or query')
+        cachedOId(res);
+        if (meth === 'POST') {
+          // TODO oId not needed if set in txndocs??? same for accounts????
 
+          await cacheOrg(res);
+        }
         allowed = true; // TODO remove!!!!!!!!
 
         break;

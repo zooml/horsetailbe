@@ -1,15 +1,15 @@
 import express, {Request, Response} from 'express';
 import ctchEx from '../controllers/ctchex';
 import {DependentError, DupError, LimitError, RefError, ValueError} from '../common/apperrs';
-import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg, findByOrg, create } from '../models/account';
+import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg as countForOrg, findByOrg, create } from '../models/account';
 import * as descs from './descs';
 import * as actts from './actts';
 import * as authz from './authz';
 import * as rsc from './rsc';
 import { FIELDS, RESOURCES } from '../common/limits';
 import * as doc from '../models/doc';
-import { fromDate, toDateStr } from '../utils/svrdate';
-import { lastCloseEndAtFromCachedOrg } from './orgs';
+import { fromDate, toDate, toDateStr } from '../utils/svrdate';
+import { lastCloseEndAtFromCachedOrg, validateBegAt } from './orgs';
 import { CATEGORIES, CloseGet, Get } from '../api/accounts';
 
 export const SEGMENT = 'accounts';
@@ -45,7 +45,7 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds =
     oId,
     num: o.num,
     name: o.name,
-    begAt: o.begAt ,
+    begAt: toDate(o.begAt),
     desc: descs.toFlds(o.desc, uId),
     clos: [],
     actts: []
@@ -73,7 +73,7 @@ const digitsAndPower = (n: number): number[] => {
   return [digits, power];
 };
 
-const acctIsActiveAt = (d: Doc, at: Date) => {
+export const isActiveAt = (d: Doc, at: Date) => {
   if (at < d.begAt) return false;
   let isAct = true;
   for (const actt of d.actts) {
@@ -112,7 +112,7 @@ const validate = async (f: CFlds, lastCloseEndAt: Date) => {
     (f.catId === undefined && f.sumId === undefined)) throw new DependentError('paId', 'catId', true);
   if (f.sumId) { // non-general account
     const sum = await findById(f.sumId, {num: 1, begAt: 1, actts: 1});
-    if (!sum || !acctIsActiveAt(sum, f.begAt)) throw new RefError('sumId', 'account', f.sumId);
+    if (!sum || !isActiveAt(sum, f.begAt)) throw new RefError('sumId', 'account', f.sumId);
     await validateNum(f, sum.num);
   } else { // general account
     const cat = CATEGORIES[f.catId]; // f.catId is defined
@@ -122,7 +122,7 @@ const validate = async (f: CFlds, lastCloseEndAt: Date) => {
     delete f.isCr;
     await validateNum(f);
   }
-  if (f.begAt < lastCloseEndAt) throw new ValueError('begAt', f.begAt, `must be after last close and org start (${toDateStr(lastCloseEndAt)})`);
+  validateBegAt(f.begAt, lastCloseEndAt);
 };
 
 const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId, lastCloseEndAt: Date) => {
@@ -133,7 +133,7 @@ const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjI
 };
 
 const validPostLimits = async (f: CFlds) => {
-  const forOrg = await countPerOrg(f.oId);
+  const forOrg = await countForOrg(f.oId);
   const max = RESOURCES.accounts.perOrg.max;
   if (max <= forOrg) throw new LimitError('accounts per organization', max);
 };

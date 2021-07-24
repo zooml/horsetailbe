@@ -1,17 +1,23 @@
 import * as base from './base';
 import * as desc from './desc';
 
-export type AmtGet = {
+export type AdjGet = {
   acId: string;
   fnId: number;
   amt: number;
 };
 
-export type Get = base.Get & {
+export type Core = {
   oId: string;
   begAt: number;
-  kind: number;
+  tdTId: number;
   desc: desc.Get;
-  amts: AmtGet[],
+  adjs: AdjGet[],
   dueAt?: number;
 };
+
+export type Get = base.Get & Core;
+
+export type AdjPost = AdjGet;
+
+export type Post = Core;

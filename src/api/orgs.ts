@@ -7,6 +7,11 @@ export const STD_ROLE_IDS = Object.freeze({
   AUDIT: 2 // readonly
 });
 
+export const GENERAL_FUND = Object.freeze({
+  id: 1,
+  tag: 'general'
+});
+
 export type RoleGet = {
   id: number;
   uId: string;

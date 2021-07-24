@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express';
-import { create, STATES, GENERAL_FUND, RoleFlds, UserFlds, FundFields, CloseFlds, countActivePerSA, Doc, CFlds, findById, findActiveByUser } from '../models/org';
+import { create, STATES, RoleFlds, UserFlds, FundFlds, CloseFlds, countActivePerSA, Doc, CFlds, findById, findActiveByUser } from '../models/org';
 import * as rsc from './rsc';
 import * as descs from './descs';
 import * as actts from './actts';
 import * as authz from './authz';
 import * as siteacct from '../models/siteacct';
-import { InternalError, LimitError } from '../common/apperrs';
+import { InternalError, LimitError, ValueError } from '../common/apperrs';
 import { NotFound } from '../controllers/errors';
 import { FIELDS, RESOURCES } from '../common/limits';
-import { fromDate } from '../utils/svrdate';
+import { fromDate, toDateStr } from '../utils/svrdate';
 import * as doc from '../models/doc';
 import ctchEx from '../controllers/ctchex';
-import { CloseGet, FundGet, Get, RoleGet, STD_ROLE_IDS, TldrGet, UserGet } from '../api/orgs';
+import { CloseGet, FundGet, Get, RoleGet, STD_ROLE_IDS, TldrGet, UserGet, GENERAL_FUND } from '../api/orgs';
 
 export const SEGMENT = 'orgs';
 export const router = express.Router();
@@ -27,7 +27,7 @@ const fromUserFlds = (f: UserFlds): UserGet => ({
   roles: f.roles.map(fromRoleFlds)
 });
 
-const fromFundFlds = (f: FundFields): FundGet => ({
+const fromFundFlds = (f: FundFlds): FundGet => ({
   id: f.id,
   tag: f.tag,
   begAt: fromDate(f.begAt),
@@ -63,6 +63,10 @@ export const lastCloseEndAtFromCachedOrg = (res: Response): Date => {
   if (!org) throw new InternalError({message: 'org should be cached'});
   return org.clos.length ? org.clos[org.clos.length - 1].endAt : org.begAt;
 }
+
+export const validateBegAt = (begAt: Date, lastCloseEndAt: Date) => {
+  if (begAt < lastCloseEndAt) throw new ValueError('begAt', begAt, `must be after last close and org start (${toDateStr(lastCloseEndAt)})`);
+};
 
 const POST_DEF: rsc.Def = [FIELDS.saId, FIELDS.name, FIELDS.st, FIELDS.begAt, FIELDS.desc, FIELDS.users, FIELDS.funds, FIELDS.clos];
 

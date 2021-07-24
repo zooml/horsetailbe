@@ -2,12 +2,12 @@
 import { logError, logWarn } from "../platform/logger";
 
 const MAX_STR_V_LEN = 49;
-const sUtcDayBegEnd = '00:00:00.000Z';
+const sUtcDayBegSuffix = '00:00:00.000Z';
 
 const toDateStr = (v: Date): string => {
   // YYYY-MM-DDTHH:mm:ss.sssZ
   const s = v.toISOString();
-  if (s.endsWith(sUtcDayBegEnd)) return s.substring(0, 10);
+  if (s.endsWith(sUtcDayBegSuffix)) return s.substring(0, 10);
   return s.slice(0, 19).replace('T', ' ');
 };
 

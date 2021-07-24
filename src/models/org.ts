@@ -13,12 +13,6 @@ export const STATES = Object.freeze({
   DELETED: 2
 });
 
-
-export const GENERAL_FUND = Object.freeze({
-  id: 1,
-  tag: 'General'
-});
-
 export type RoleFlds = {
   readonly id: number;
   readonly uId: doc.ObjId;
@@ -30,7 +24,7 @@ export type UserFlds = {
   readonly roles: RoleFlds[];
 };
 
-export type FundFields = {
+export type FundFlds = {
   readonly id: number;
   tag: string;
   begAt: Date;
@@ -53,7 +47,7 @@ export type CFlds = { // create fields
   begAt: Date;
   readonly desc: desc.Flds;
   readonly users: UserFlds[];
-  readonly funds: FundFields[];
+  readonly funds: FundFlds[];
   readonly clos: CloseFlds[];
 };
 
