@@ -8,16 +8,20 @@ export type AdjGet = {
 };
 
 export type Core = {
-  oId: string;
   begAt: number;
   tdTId: number;
-  desc: desc.Get;
-  adjs: AdjGet[],
   dueAt?: number;
 };
 
-export type Get = base.Get & Core;
+export type Get = base.Get & Core & {
+  oId: string;
+  adjs: AdjGet[],
+  desc: desc.Get;
+};
 
 export type AdjPost = AdjGet;
 
-export type Post = Core;
+export type Post = Core & {
+  adjs: AdjPost[],
+  desc?: desc.Get;
+};

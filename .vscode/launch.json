@@ -5,24 +5,21 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Mocha Tests",
       "type": "pwa-node",
       "request": "launch",
-      "runtimeArgs": [
-        "-r", "ts-node/register"
-      ],
       "args": [
-        "${workspaceFolder}/test/**/*.test.ts",
+        "${workspaceRoot}/test/**/*.test.ts",
         "-u", "bdd",
         "--no-timeouts",
         "--colors",
+        "--require", "ts-node/register",
         "--require", "test/hooks.ts"
       ],
       "internalConsoleOptions": "openOnSessionStart",
-      "name": "Mocha Tests",
       "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
       "skipFiles": [
-        "<node_internals>/**",
-        "test/hooks.ts"
+        "<node_internals>/**"
       ],
       "outputCapture": "std",
       "env": {
@@ -30,9 +27,9 @@
       }
     },
     {
+      "name": "Launch Program",
       "type": "pwa-node",
       "request": "launch",
-      "name": "Launch Program",
       "skipFiles": [
         "<node_internals>/**"
       ],

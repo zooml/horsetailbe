@@ -57,7 +57,7 @@ describe('orgs integration test', () => {
     o.funds.should.have.lengthOf(1);
     const f = o.funds[0];
     f.id.should.equal(1);
-    f.tag.should.equal('General');
+    f.tag.should.equal('general');
     f.begAt.should.be.a('number');
     util.testAt(f.at).should.be.true;
     // new Date(f.begAt).toISOString().should.match(/T00:00:00\.000Z$/); TODO

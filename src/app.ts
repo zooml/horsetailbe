@@ -10,7 +10,8 @@ import * as orgs from './routes/orgs';
 import * as accounts from './routes/accounts';
 import * as sessions from './routes/sessions';
 import * as siteaccts from './routes/siteaccts';
-import cors from 'cors';
+import * as txndocs from './routes/txndocs';
+// import cors from 'cors';
 import * as session from './routes/session';
 import * as authz from './routes/authz';
 
@@ -53,6 +54,7 @@ app.use(apiV1Prefix + users.SEGMENT, users.router);
 app.use(apiV1Prefix + siteaccts.SEGMENT, siteaccts.router);
 app.use(apiV1Prefix + orgs.SEGMENT, orgs.router);
 app.use(apiV1Prefix + accounts.SEGMENT, accounts.router);
+app.use(apiV1Prefix + txndocs.SEGMENT, txndocs.router);
 app.use(apiPrefix, authz.notFound(apiPrefix));
 
 // TODO '*' not found html page, or check for content type (json vs html)?

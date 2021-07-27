@@ -10,9 +10,9 @@ import * as doc from '../models/doc';
 import ctchEx from '../controllers/ctchex';
 import { lastCloseEndAtFromCachedOrg, validateBegAt } from './orgs';
 import { LimitError, ValueError } from '../common/apperrs';
-import {Doc as OrgDoc} from '../models/org';
+import {Doc as OrgDoc, isFundActiveAt} from '../models/org';
 import {Doc as AcctDoc, findByIds as findAccts} from '../models/account';
-import { isActiveAt } from './accounts';
+import { isActiveAt as isAcctActiveAt } from '../models/account';
 
 export const SEGMENT = 'txndocs';
 export const router = express.Router();
@@ -58,15 +58,19 @@ const toCFlds = (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId): CFlds =
 
 const validateAdj = (adj: AdjCFlds, org: OrgDoc, begAt: Date, acct?: AcctDoc) => {
   if (adj.amt === 0) throw new ValueError('adjs', 0, 'amt cannot be 0');
-  if (!acct || acct.oId !== org.id) throw new ValueError('adjs', adj.acId.toHexString(), 'unknown account id');
-  if (!isActiveAt(acct, begAt)) throw new ValueError('adjs', adj.acId.toHexString(), 'account inactive');
-  if (!org.funds.find(fn => fn.id == adj.fnId)) throw new ValueError('adjs', adj.fnId, 'unknown fund');
+  if (!acct || !acct.oId.equals(org._id))
+    throw new ValueError('adjs', adj.acId.toHexString(), 'unknown account id');
+  if (!isAcctActiveAt(acct, begAt)) throw new ValueError('adjs', adj.acId.toHexString(), 'account inactive at date');
+  if (acct.subCnt) throw new ValueError('adjs', adj.acId.toHexString(), 'cannot post to summary account');
+  const fund = org.funds.find(fn => fn.id == adj.fnId);
+  if (!fund) throw new ValueError('adjs', adj.fnId, 'unknown fund id');
+  if (!isFundActiveAt(fund, begAt)) throw new ValueError('adjs', fund.id, 'fund inactive at date');
 };
 
 const validateAdjs = async (adjs: AdjCFlds[], org: OrgDoc, begAt: Date) => {
-  const sum = adjs.reduce((p, adj) => {return p + adj.amt}, 0);
+  const sum = adjs.reduce((p, adj) => p + adj.amt, 0);
   if (sum) throw new ValueError('adjs', sum, 'amts credits and debits do not add up to 0');
-  const accts = (await findAccts(adjs.map(a => a.acId), {_id: 1, oId: 1, begAt: 1, actts: 1}))
+  const accts = (await findAccts(adjs.map(a => a.acId), {_id: 1, oId: 1, begAt: 1, subCnt: 1, actts: 1}))
     .reduce((p, a) => {p[a._id.toHexString()] = a; return p;}, {} as {[k: string]: AcctDoc});
   adjs.forEach(adj => validateAdj(adj, org, begAt, accts[adj.acId.toHexString()]));
 };
@@ -74,7 +78,7 @@ const validateAdjs = async (adjs: AdjCFlds[], org: OrgDoc, begAt: Date) => {
 const validate = async (f: CFlds, org: OrgDoc, lastCloseEndAt: Date) => {
   validateBegAt(f.begAt, lastCloseEndAt);
   if (f.dueAt && f.dueAt < f.begAt) throw new ValueError('dueAt', f.dueAt, 'dueAt must be same or after begAt');
-  validateAdjs(f.adjs, org, f.begAt);
+  await validateAdjs(f.adjs, org, f.begAt);
 };
 
 const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, org: OrgDoc, lastCloseEndAt: Date) => {

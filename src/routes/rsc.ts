@@ -93,7 +93,7 @@ export const normAndValidObj = (def: Def, o: {[k: string]: any}, subDefs?: {[k: 
   }
 }
 
-export const normAndValid = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}) => 
+export const normAndValid = (def: Def, o: {[k: string]: any}, subDefs?: {[k: string]: Def}) =>
   normAndValidObj(def, o, subDefs);
 
 export const fromDoc = (d: doc.Doc): base.Get => ({

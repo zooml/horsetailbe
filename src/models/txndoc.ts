@@ -33,7 +33,7 @@ export type Doc = doc.Doc & Flds;
 const schema = new Schema<Flds, mongoose.Model<Flds>>({
   oId: {type: SObjectId, ref: ORG_NAME, required: true},
   begAt: {type: Date, required: true},
-  kind: {type: Number, required: true},
+  tdTId: {type: Number, required: true},
   desc: { // desc.Doc schema
     uId: {type: SObjectId, ref: USER_NAME, required: true},
     note: {type: String, trim: true},

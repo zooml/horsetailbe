@@ -8,8 +8,8 @@
     "build": "tsc --project tsconfig-build.json",
     "prestart": "npm run build",
     "start": "node ./dist/server.js",
-    "pretest": "tslint -c tslint.json -p tsconfig.json --fix",
-    "test": "NODE_ENV=test ./node_modules/.bin/_mocha 'out-ide/test/**/*.test.js' --colors"
+    "pretest": "tslint -c tslint.json -p tsconfig.json --fix && tsc --project tsconfig.json",
+    "test": "NODE_ENV=test ./node_modules/.bin/_mocha --require out-ide/test/hooks.js 'out-ide/test/**/*.test.js' --colors"
   },
   "dependencies": {
     "bcrypt": "^5.0.1",

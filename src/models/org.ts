@@ -115,6 +115,11 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
+export const isFundActiveAt = (fund: FundFlds, at: Date) => {
+  if (at < fund.begAt) return false;
+  return actt.isActiveAt(fund.actts, at);
+};
+
 export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
   model.create(f));
 

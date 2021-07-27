@@ -1,8 +1,9 @@
 import express, {Request, Response} from 'express';
 import ctchEx from '../controllers/ctchex';
 import {DependentError, DupError, LimitError, RefError, ValueError} from '../common/apperrs';
-import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg as countForOrg, findByOrg, create } from '../models/account';
+import { Doc, CFlds, CloseFlds, findOneGANum, findById, exists, countPerOrg as countForOrg, findByOrg, create, isActiveAt, updSubCnt } from '../models/account';
 import * as descs from './descs';
+import * as actt from '../models/actt';
 import * as actts from './actts';
 import * as authz from './authz';
 import * as rsc from './rsc';
@@ -29,6 +30,7 @@ const fromDoc = (d: Doc): Get => {
     name: d.name,
     begAt: fromDate(d.begAt),
     desc: descs.fromFlds(d.desc),
+    subCnt: d.subCnt,
     clos: d.clos.map(fromCloseFlds),
     actts: d.actts.map(actts.fromDoc),
   };
@@ -73,16 +75,6 @@ const digitsAndPower = (n: number): number[] => {
   return [digits, power];
 };
 
-export const isActiveAt = (d: Doc, at: Date) => {
-  if (at < d.begAt) return false;
-  let isAct = true;
-  for (const actt of d.actts) {
-    if (at < actt.at) return isAct;
-    isAct = !isAct;
-  }
-  return isAct;
-}
-
 const validateNum = async (f: CFlds, sumNum?: number) => {
   const num = f.num;
   if (!num) throw new ValueError('num', num, 'cannot be zero');
@@ -107,13 +99,21 @@ const validateNum = async (f: CFlds, sumNum?: number) => {
   }
 };
 
+const validateNewSum = async (sum: Doc) => {
+  // TODO check for non-0 balance, and last txndoc.begAt before sub.begAt
+  // option to gen txndoc to new (if last txndoc.begAt before sub.begAt)
+  // what about activate/suspends?????
+};
+
 const validate = async (f: CFlds, lastCloseEndAt: Date) => {
+  validateBegAt(f.begAt, lastCloseEndAt);
   if ((f.catId !== undefined && f.sumId !== undefined) ||
     (f.catId === undefined && f.sumId === undefined)) throw new DependentError('paId', 'catId', true);
   if (f.sumId) { // non-general account
-    const sum = await findById(f.sumId, {num: 1, begAt: 1, actts: 1});
+    const sum = await findById(f.sumId, {num: 1, begAt: 1, subCnt: 1, actts: 1});
     if (!sum || !isActiveAt(sum, f.begAt)) throw new RefError('sumId', 'account', f.sumId);
     await validateNum(f, sum.num);
+    if (sum.subCnt === 0) await validateNewSum(sum);
   } else { // general account
     const cat = CATEGORIES[f.catId]; // f.catId is defined
     if (!cat) throw new RefError('catId', 'category', f.catId);
@@ -122,7 +122,6 @@ const validate = async (f: CFlds, lastCloseEndAt: Date) => {
     delete f.isCr;
     await validateNum(f);
   }
-  validateBegAt(f.begAt, lastCloseEndAt);
 };
 
 const toValidCFlds = async (o: {[k: string]: any}, uId: doc.ObjId, oId: doc.ObjId, lastCloseEndAt: Date) => {
@@ -154,6 +153,7 @@ router.post('/', ctchEx(async (req: Request, res: Response) => {
   const f = await toValidCFlds(req.body, uId, oId, lastCloseEndAt);
   await validPostLimits(f);
   const resDoc = await create(f);
+  if (resDoc.sumId) await updSubCnt(resDoc.sumId, true);
   res.json(fromDoc(resDoc));
 }));
 

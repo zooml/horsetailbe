@@ -42,11 +42,11 @@ export type Core = {
 export type Get = base.Get & Core & {
   oId: string;
   desc: desc.Get;
+  subCnt: number;
   clos: CloseGet[];
   actts: actt.Get[];
 };
 
 export type Post = Core & {
-  oId?: string;
   desc?: desc.Post;
 };

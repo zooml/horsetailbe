@@ -33,7 +33,9 @@ export type FFlds = { // filter fields
   catId?: number;
 };
 
-export type Flds = doc.Flds & CFlds;
+export type Flds = doc.Flds & CFlds & {
+  subCnt: number;
+};
 
 export type Doc = doc.Doc & Flds;
 
@@ -51,6 +53,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
   sumId: {type: SObjectId, ref: NAME}, // summary/parent, required iif not top-level
   catId: Number, // category, required iif top-level
   isCr: Boolean, // required iif not default
+  subCnt: {type: Number, default: 0},
   clos: [{
     id: {type: Number, required: true},
     fnId: {type: Number, required: true},
@@ -75,6 +78,11 @@ schema
 
 const model = mongoose.model<Flds>(NAME, schema);
 
+export const isActiveAt = (d: Doc, at: Date) => {
+  if (at < d.begAt) return false;
+  return actt.isActiveAt(d.actts, at);
+}
+
 export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
   model.create(f));
 
@@ -92,8 +100,11 @@ export const findOneGANum = async (oId: doc.ObjId): Promise<number | undefined> 
   return d?.num;
 });
 
-export const countPerOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
-  model.countDocuments({oId}));
-
 export const findByIds = async (ids: doc.ObjId[], proj?: {[k: string]: number}): Promise<Doc[]> => doc.op(async () =>
   model.find({_id: {$in: ids}}, proj));
+
+export const updSubCnt = async (id: doc.ObjId, inc: boolean) => doc.op(async () =>
+  model.updateOne({_id: id}, {$inc: {subCnt: inc ? 1 : -11}}));
+
+export const countPerOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
+  model.countDocuments({oId}));

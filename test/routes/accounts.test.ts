@@ -13,6 +13,22 @@ import { createOrg } from './orgs.test';
 
 const PATH = util.PATH_PREFIX + 'accounts';
 
+export const acctBegAt = new Date('2021-06-15T00:00:00.000Z').getTime();
+
+export const createAcct = async (ses: string, oId: string, rev?: boolean) => {
+  const res = await svr.post(PATH)
+    .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+    .send({
+      num: rev ? 400 : 100,
+      name: rev ? 'My Revenue' : 'My Assets',
+      begAt: acctBegAt,
+      catId: rev ? 4 : 1,
+      desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
+    });
+  res.should.have.status(200);
+  return res.body.id;
+}
+
 describe('accounts integration test', () => {
 	afterEach(() => db.clear());
 
@@ -116,6 +132,7 @@ describe('accounts integration test', () => {
     should.not.exist(o.catId);
     o.sumId.should.equal(acId);
     o.desc.should.eql({uId, id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'});
+    o.subCnt.should.equal(0);
     // test GET all
     res = await svr.get(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).query({oId}).send();
@@ -126,10 +143,12 @@ describe('accounts integration test', () => {
     o.id.should.equal(acId);
     o.num.should.equal(100);
     o.name.should.equal('My Assets');
+    o.subCnt.should.equal(1);
     o = res.body[1];
     o.id.should.equal(acId2);
     o.num.should.equal(110);
     o.name.should.equal('Cash');
+    o.subCnt.should.equal(0);
   })
   it('should accept POST and subacct POST', async () =>  {
     const [uId, ses, oId] = await createOrg('My Org');
