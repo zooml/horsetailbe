@@ -13,6 +13,7 @@ import { LimitError, ValueError } from '../common/apperrs';
 import {Doc as OrgDoc, isFundActiveAt} from '../models/org';
 import {Doc as AcctDoc, findByIds as findAccts} from '../models/account';
 import { isActiveAt as isAcctActiveAt } from '../models/account';
+import { GENERAL_FUND } from '../api/orgs';
 
 export const SEGMENT = 'txndocs';
 export const router = express.Router();
@@ -62,9 +63,12 @@ const validateAdj = (adj: AdjCFlds, org: OrgDoc, begAt: Date, acct?: AcctDoc) =>
     throw new ValueError('adjs', adj.acId.toHexString(), 'unknown account id');
   if (!isAcctActiveAt(acct, begAt)) throw new ValueError('adjs', adj.acId.toHexString(), 'account inactive at date');
   if (acct.subCnt) throw new ValueError('adjs', adj.acId.toHexString(), 'cannot post to summary account');
-  const fund = org.funds.find(fn => fn.id == adj.fnId);
-  if (!fund) throw new ValueError('adjs', adj.fnId, 'unknown fund id');
-  if (!isFundActiveAt(fund, begAt)) throw new ValueError('adjs', fund.id, 'fund inactive at date');
+  if (adj.fnId === undefined) adj.fnId = GENERAL_FUND.id;
+  else {
+    const fund = org.funds.find(fn => fn.id == adj.fnId);
+    if (!fund) throw new ValueError('adjs', adj.fnId, 'unknown fund id');
+    if (!isFundActiveAt(fund, begAt)) throw new ValueError('adjs', fund.id, 'fund inactive at date');
+  }
 };
 
 const validateAdjs = async (adjs: AdjCFlds[], org: OrgDoc, begAt: Date) => {

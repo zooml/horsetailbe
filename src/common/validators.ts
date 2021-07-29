@@ -16,8 +16,8 @@ export const toCap = (v: string): string => {
   return v.charAt(0).toLocaleUpperCase().concat(v.slice(1));
 };
 
-const sUtcDayBegSuffix = '00:00:00.000Z';
-const validDayBeg = (v: Date) => v.toISOString().endsWith(sUtcDayBegSuffix);
+const DAY_BEG_SUFFIX = '00:00:00.000Z';
+const validDayBeg = (v: Date) => v.toISOString().endsWith(DAY_BEG_SUFFIX);
 
 export const validStr = (lim: StrLimit, thro: boolean, v: any) => {
   if (!v) { // '' or undefined is OK only if min === 0

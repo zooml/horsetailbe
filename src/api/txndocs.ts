@@ -1,10 +1,13 @@
 import * as base from './base';
 import * as desc from './desc';
 
-export type AdjGet = {
+export type AdjCore = {
   acId: string;
-  fnId: number;
   amt: number;
+};
+
+export type AdjGet = AdjCore & {
+  fnId: number;
 };
 
 export type Core = {
@@ -19,7 +22,9 @@ export type Get = base.Get & Core & {
   desc: desc.Get;
 };
 
-export type AdjPost = AdjGet;
+export type AdjPost = AdjCore & {
+  fnId?: number;
+};
 
 export type Post = Core & {
   adjs: AdjPost[],

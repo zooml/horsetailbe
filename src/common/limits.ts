@@ -82,7 +82,7 @@ export const FIELDS = {
 
   num: {kind: 'number', name: 'num', min: 100, max: 999999, req: true} as NumLimit,
   st: {kind: 'number', name: 'st', min: 1, max: 99999, req: true} as NumLimit,
-  fnId: {kind: 'number', name: 'fnId', min: 1, max: 99999, req: true} as NumLimit,
+  fnId: {kind: 'number', name: 'fnId', min: 1, max: 99999, req: false} as NumLimit,
   tdTId: {kind: 'number', name: 'tdTId', min: 1, max: 99999, req: true} as NumLimit,
 
   isCr: {kind: 'boolean', name: 'isCr', req: false} as BoolLimit,

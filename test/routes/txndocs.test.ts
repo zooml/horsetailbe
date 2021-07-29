@@ -14,7 +14,7 @@ import { acctBegAt, createAcct } from './accounts.test';
 const PATH = util.PATH_PREFIX + 'txndocs';
 const DAY = 24*60*60*1000;
 
-type Amt = {amt: number, acId: string, fnId: number};
+type Amt = {amt: number, acId: string, fnId?: number};
 type Desc = {uId: string, id?: string, note?: string, url?: string};
 const validate = (o: {[k: string]: any}, uId: string, oId: string, begAt: number, amts: Amt[], desc?: Desc) => {
   o.id.should.be.a('string');
@@ -170,7 +170,7 @@ describe('txndocs integration test', () => {
     const assetsId = await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1});
     const revenueId = await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4});
     let begAt = acctBegAt + DAY;
-    const amts = [{acId: assetsId, fnId: 1, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}];
+    const amts = [{acId: assetsId, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}];
     let res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
@@ -250,6 +250,7 @@ describe('txndocs integration test', () => {
     res.should.have.status(200);
     res = await svr.get(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId).send();
+    res.should.have.status(200);
     let os = res.body;
     expect(os).to.be.an('array');
     expect(os).to.have.lengthOf(3);
@@ -261,15 +262,14 @@ describe('txndocs integration test', () => {
     const assetsId2 = await createAcct(ses, oId2, {num: 100, name: 'assets', catId: 1});
     const revenueId2 = await createAcct(ses, oId2, {num: 400, name: 'revs', catId: 4});
     const amts_2 = [
-      {acId: assetsId2, fnId: 1, amt: 2.0}, 
-      {acId: revenueId2, fnId: 1, amt: -2.0}];
+      {acId: assetsId2, fnId: 1, amt: 200.0}, 
+      {acId: revenueId2, fnId: 1, amt: -200.0}];
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId2)
       .send({
         begAt,
         tdTId: 1,
-        adjs: amts_2,
-        desc: {id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'}
+        adjs: amts_2
       });
     res.should.have.status(200);
     res = await svr.get(PATH)
@@ -280,5 +280,12 @@ describe('txndocs integration test', () => {
     validate(os[0], uId, oId, begAt2, amts2, {uId: uId});
     validate(os[1], uId, oId, begAt3, amts3, {uId: uId});
     validate(os[2], uId, oId, begAt, amts);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId2).send();
+    res.should.have.status(200);
+    os = res.body;
+    expect(os).to.be.an('array');
+    expect(os).to.have.lengthOf(1);
+    validate(os[0], uId, oId2, begAt, amts_2, {uId: uId});
   })
 });
