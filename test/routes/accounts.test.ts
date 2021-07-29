@@ -15,19 +15,20 @@ const PATH = util.PATH_PREFIX + 'accounts';
 
 export const acctBegAt = new Date('2021-06-15T00:00:00.000Z').getTime();
 
-export const createAcct = async (ses: string, oId: string, rev?: boolean) => {
+export const createAcct = async (ses: string, oId: string, f: {num: number, name: string, catId?: number, sumId?: string}) => {
   const res = await svr.post(PATH)
     .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
     .send({
-      num: rev ? 400 : 100,
-      name: rev ? 'My Revenue' : 'My Assets',
+      num: f.num,
+      name: f.name,
       begAt: acctBegAt,
-      catId: rev ? 4 : 1,
+      catId: f.catId,
+      sumId: f.sumId,
       desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}
     });
   res.should.have.status(200);
   return res.body.id;
-}
+};
 
 describe('accounts integration test', () => {
 	afterEach(() => db.clear());

@@ -12,8 +12,8 @@ import { signIn } from './users.test';
 
 const PATH = util.PATH_PREFIX + 'orgs';
 
-export const createOrg = async (name: string) => {
-  const [uId, ses] = await signIn();
+export const createOrg = async (name: string, credSes?: string) => {
+  const [uId, ses] = credSes ? [undefined, credSes] : await signIn();
   const res = await svr.post(PATH)
     .set('Cookie', cookie.serialize('ses', ses))
     .send({

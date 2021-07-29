@@ -54,7 +54,7 @@ const schema = new Schema<Flds, mongoose.Model<Flds>>({
 
 schema
   .index({oId: 1, begAt: 1, at: 1}, {unique: true})
-  .index({oId: 1, 'adjs.acId': 1});
+  .index({oId: 1, 'adjs.acId': 1, begAt: 1});
 
 const model = mongoose.model(NAME, schema);
 

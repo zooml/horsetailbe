@@ -70,6 +70,12 @@ const validateAdj = (adj: AdjCFlds, org: OrgDoc, begAt: Date, acct?: AcctDoc) =>
 const validateAdjs = async (adjs: AdjCFlds[], org: OrgDoc, begAt: Date) => {
   const sum = adjs.reduce((p, adj) => p + adj.amt, 0);
   if (sum) throw new ValueError('adjs', sum, 'amts credits and debits do not add up to 0');
+  adjs.reduce((p, adj) => {
+    const id = adj.acId.toHexString();
+    if (id in p) throw new ValueError('adjs', id, 'cannot have duplicate account');
+    p[id] = true;
+    return p;
+  }, {} as {[k: string]: boolean});
   const accts = (await findAccts(adjs.map(a => a.acId), {_id: 1, oId: 1, begAt: 1, subCnt: 1, actts: 1}))
     .reduce((p, a) => {p[a._id.toHexString()] = a; return p;}, {} as {[k: string]: AcctDoc});
   adjs.forEach(adj => validateAdj(adj, org, begAt, accts[adj.acId.toHexString()]));
