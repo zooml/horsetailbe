@@ -13,7 +13,7 @@ import { createOrg } from './orgs.test';
 
 const PATH = util.PATH_PREFIX + 'accounts';
 
-export const acctBegAt = new Date('2021-06-15T00:00:00.000Z').getTime();
+export const ACC_BEGAT = new Date('2021-06-15T00:00:00.000Z').getTime();
 
 export const createAcct = async (ses: string, oId: string, f: {num: number, name: string, catId?: number, sumId?: string}) => {
   const res = await svr.post(PATH)
@@ -21,7 +21,7 @@ export const createAcct = async (ses: string, oId: string, f: {num: number, name
     .send({
       num: f.num,
       name: f.name,
-      begAt: acctBegAt,
+      begAt: ACC_BEGAT,
       catId: f.catId,
       sumId: f.sumId,
       desc: {id: 'ext id', note: 'this is a note', url: 'https://google.com'}

@@ -5,6 +5,8 @@ import { MongoError } from 'mongodb';
 
 export type ObjId = Types.ObjectId;
 
+export type FFlds = {[k: string]: any}; // general filter type
+
 const regex = /^[0-9a-fA-F]{24}$/;
 
 export const validObjId = (id: string, name: string) => {

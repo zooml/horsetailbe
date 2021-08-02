@@ -61,8 +61,12 @@ const model = mongoose.model(NAME, schema);
 export const create = async (f: CFlds): Promise<Doc> => doc.op(async () =>
   model.create(f));
 
-export const findByOrg = async (oId: doc.ObjId): Promise<Doc[]> => doc.op(async () =>
-  model.find({oId}).sort({begAt: -1, at: -1}));
+export const findByOrg = async (oId: doc.ObjId, flt?: {[k: string]: any}, lim?: number): Promise<Doc[]> => doc.op(async () => {
+  const f = flt ? {oId, ...flt} : {oId};
+  let res = model.find(f).sort({begAt: -1, at: -1});
+  if (lim) res = res.limit(lim);
+  return res;
+});
 
 export const countForOrg = async (oId: doc.ObjId): Promise<number> => doc.op(async () =>
   model.countDocuments({oId}));

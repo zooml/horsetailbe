@@ -14,6 +14,7 @@ import {Doc as OrgDoc, isFundActiveAt} from '../models/org';
 import {Doc as AcctDoc, findByIds as findAccts} from '../models/account';
 import { isActiveAt as isAcctActiveAt } from '../models/account';
 import { GENERAL_FUND } from '../api/orgs';
+import * as paging from '../controllers/paging';
 
 export const SEGMENT = 'txndocs';
 export const router = express.Router();
@@ -104,12 +105,20 @@ const validPostLimits = async (f: CFlds) => {
   if (max <= forOrg) throw new LimitError('txndocs per organization', max);
 };
 
+const pagingFTs: paging.FldTyps = {
+  begAt: 'D',
+  at: 'D'
+};
+
 router.get('/', ctchEx(async (req: Request, res: Response) => {
   await authz.isAllowed(req, res, SEGMENT);
-  // TODO page limit
   const oId: doc.ObjId = res.locals.oId;
-  const resDocs = await findByOrg(oId);
-  res.json(resDocs.map(fromDoc));
+  const [flt, lim] = paging.extractKey(req, pagingFTs, true);
+  const resDocs = await findByOrg(oId, flt, lim);
+  const lastDoc = resDocs.length ? resDocs[resDocs.length - 1] : undefined;
+  const last = lastDoc ? [lastDoc.begAt, lastDoc.at] : undefined;
+  paging.insertKey(req, res, resDocs.length, last)
+    .json(resDocs.map(fromDoc));
 }));
 
 router.post('/', ctchEx(async (req: Request, res: Response) => {

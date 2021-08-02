@@ -2,14 +2,16 @@ import { CastError, DayBegError, FmtError, MaxError, MinError, MissingError, Val
 import { BoolLimit, ChoiceLimit, CurrencyLimit, DateLimit, NumLimit, StrLimit } from "./limits";
 
 export const isStr = (v: any) => typeof v === 'string';
-export const isNum = (v: any) => typeof v === 'number';
+export const isNum = (v: any) => (typeof v === 'number') && !isNaN(v);
 export const isDate = (v: any) => v instanceof Date;
 export const isArr = (v: any) => Array.isArray(v);
 export const isObj = (v: any) => Object.prototype.toString.call(v) === '[object Object]';
 
-export const toInt = (v: string): number => {
+export const toInt = (v: string, path?: string): number => {
   const i = Number(v);
-  return isNaN(i) ? NaN : (Math.floor(i) === i ? i : NaN);
+  const n = isNaN(i) ? NaN : (Math.floor(i) === i ? i : NaN);
+  if (isNaN(n) && path) throw new CastError(path, v);
+  return n;
 }
 export const toCap = (v: string): string => {
   if (!v) return v;

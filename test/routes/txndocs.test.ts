@@ -9,7 +9,7 @@ import * as util from '../util';
 import { svr } from '../hooks';
 import cookie from 'cookie';
 import { createOrg } from './orgs.test';
-import { acctBegAt, createAcct } from './accounts.test';
+import { ACC_BEGAT, createAcct } from './accounts.test';
 
 const PATH = util.PATH_PREFIX + 'txndocs';
 const DAY = 24*60*60*1000;
@@ -37,6 +37,51 @@ const validate = (o: {[k: string]: any}, uId: string, oId: string, begAt: number
   expect(Object.keys(o).length).to.equal(9);
 };
 
+const genArr = (cnts: number[]) => {
+  const cnt = cnts[0] + cnts[2]; // total random begAt
+  const skip = cnts[1]; // gap for same begAt
+  const arr: number[] = [];
+  for (let i = 0; i < cnt; ++i) arr[i] = i < cnts[0] ? i : i + skip;
+  for (let i = 0; i < cnt - 1; ++i) {
+    const n = Math.floor(Math.random() * (cnt - i));
+    const tmp = arr[n];
+    arr[n] = arr[i];
+    arr[i] = tmp;
+  }
+  return arr;
+};
+const gen = async (ses: string, oId: string, acIds: string[], cnts: number[]) => {
+  const arr = genArr(cnts);
+  // leave room for cnts[1] days event though we only use 1 (due to amt index)
+  let begAtEnd = ACC_BEGAT + DAY * (cnts[0] + cnts[1] + cnts[2] + 1);
+  const begAtSame = begAtEnd - DAY * cnts[2];
+  let n = -1;
+  for (let k = 0; k < 3; ++k) { // k=0,2 random, 1 same
+    for (let i = 0; i < cnts[k]; ++i) {
+      if (k === 0 || k === 2) ++n;
+      const order = (k === 0 || k === 2) ? arr[n] : cnts[0] + cnts[1] - i;
+      const amts = [
+        {acId: acIds[0], fnId: 1, amt: order + 1},
+        {acId: acIds[1], fnId: 1, amt: - (order + 1)}];
+      const begAt = (k === 0 || k === 2) ? begAtEnd - DAY * order : begAtSame;
+      let res = await svr.post(PATH)
+        .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+        .send({
+          begAt,
+          tdTId: 1,
+          adjs: amts
+        });
+      res.should.have.status(200);
+    }
+  }
+};
+const validateAdjs = (os: any, len: number, beg?: number) => {
+  expect(os).to.be.an('array');
+  expect(os).to.have.lengthOf(len);
+  for (let i = 0; i < len; ++i)
+    os[i].adjs[0].amt.should.equal(i + (beg ? beg : 0) + 1);
+};
+
 describe('txndocs integration test', () => {
 	afterEach(() => db.clear());
 
@@ -47,7 +92,7 @@ describe('txndocs integration test', () => {
     const res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses))
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 1, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}]
       });
@@ -62,7 +107,7 @@ describe('txndocs integration test', () => {
     let res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt,
+        begAt: ACC_BEGAT,
         // tdTId: 1,
         adjs: [{acId: assetsId, fnId: 1, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}]
       });
@@ -72,7 +117,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: '60fddb86918bbb364469d201', fnId: 1, amt: 2}, {acId: revenueId, fnId: 1, amt: -2}]
       });
@@ -82,7 +127,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 1, amt: 0}, {acId: revenueId, fnId: 1, amt: 0}]
       });
@@ -92,7 +137,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY + 1,
+        begAt: ACC_BEGAT + DAY + 1,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 1, amt: 2}, {acId: revenueId, fnId: 1, amt: -2}]
       });
@@ -102,7 +147,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 2, amt: 2}, {acId: revenueId, fnId: 1, amt: -2}]
       });
@@ -112,7 +157,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 2, amt: 2}]
       });
@@ -123,7 +168,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: assetsId, fnId: 1, amt: 2}, {acId: revenueId, fnId: 1, amt: -2}]
       });
@@ -133,7 +178,7 @@ describe('txndocs integration test', () => {
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
       .send({
-        begAt: acctBegAt + DAY,
+        begAt: ACC_BEGAT + DAY,
         tdTId: 1,
         adjs: [{acId: cashId, fnId: 1, amt: 2}, {acId: cashId, fnId: 1, amt: -1}, {acId: revenueId, fnId: 1, amt: -1}]
       });
@@ -145,7 +190,7 @@ describe('txndocs integration test', () => {
     const [uId, ses, oId] = await createOrg('my org');
     const assetsId = await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1});
     const revenueId = await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4});
-    let begAt = acctBegAt + DAY;
+    let begAt = ACC_BEGAT + DAY;
     const amts = [{acId: assetsId, fnId: 1, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}];
     let res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -169,7 +214,7 @@ describe('txndocs integration test', () => {
     const [uId, ses, oId] = await createOrg('my org');
     const assetsId = await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1});
     const revenueId = await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4});
-    let begAt = acctBegAt + DAY;
+    let begAt = ACC_BEGAT + DAY;
     const amts = [{acId: assetsId, amt: 2.0}, {acId: revenueId, fnId: 1, amt: -2.0}];
     let res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -180,7 +225,7 @@ describe('txndocs integration test', () => {
         desc: {id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'}
       });
     res.should.have.status(200);
-    let begAt2 = acctBegAt + 3*DAY;
+    let begAt2 = ACC_BEGAT + 3*DAY;
     const amts2 = [{acId: assetsId, fnId: 1, amt: -1000}, {acId: revenueId, fnId: 1, amt: 1000}];
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -190,7 +235,7 @@ describe('txndocs integration test', () => {
         adjs: amts2
       });
     res.should.have.status(200);
-    let begAt3 = acctBegAt + 2*DAY;
+    let begAt3 = ACC_BEGAT + 2*DAY;
     const amts3 = [{acId: assetsId, fnId: 1, amt: -19000}, {acId: revenueId, fnId: 1, amt: 19000}];
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -215,7 +260,7 @@ describe('txndocs integration test', () => {
     const cashId = await createAcct(ses, oId, {num: 110, name: 'cash', sumId: assetsId});
     const furnId = await createAcct(ses, oId, {num: 120, name: 'furniture', sumId: assetsId});
     const revenueId = await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4});
-    let begAt = acctBegAt + DAY;
+    let begAt = ACC_BEGAT + DAY;
     const amts = [
       {acId: cashId, fnId: 1, amt: 2.0}, 
       {acId: revenueId, fnId: 1, amt: -2.0}];
@@ -228,7 +273,7 @@ describe('txndocs integration test', () => {
         desc: {id: 'sub ext id', note: 'this is a sub note', url: 'https://google.com/sub'}
       });
     res.should.have.status(200);
-    let begAt2 = acctBegAt + 3*DAY;
+    let begAt2 = ACC_BEGAT + 3*DAY;
     const amts2 = [{acId: furnId, fnId: 1, amt: -1000}, {acId: revenueId, fnId: 1, amt: 1000}];
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -238,7 +283,7 @@ describe('txndocs integration test', () => {
         adjs: amts2
       });
     res.should.have.status(200);
-    let begAt3 = acctBegAt + 2*DAY;
+    let begAt3 = ACC_BEGAT + 2*DAY;
     const amts3 = [{acId: furnId, fnId: 1, amt: -19000}, {acId: revenueId, fnId: 1, amt: 19000}];
     res = await svr.post(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -287,5 +332,88 @@ describe('txndocs integration test', () => {
     expect(os).to.be.an('array');
     expect(os).to.have.lengthOf(1);
     validate(os[0], uId, oId2, begAt, amts_2, {uId: uId});
+  })
+  it('should not page if page complete', async () =>  {
+    const [uId, ses, oId] = await createOrg('my org');
+    const acIds = [
+      await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1}),
+      await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4})];
+    let res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId).send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 0);
+    await gen(ses, oId, acIds, [20, 0, 0]);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId).send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 20);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 21})
+      .send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 20);
+  })
+  it('should page if page not complete', async () =>  {
+    const [uId, ses, oId] = await createOrg('my org');
+    const acIds = [
+      await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1}),
+      await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4})];
+    await gen(ses, oId, acIds, [20, 0, 0]);
+    let res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 19})
+      .send();
+    res.should.have.status(200);
+    let npage = res.header['x-npage'];
+    expect(npage).to.be.string;
+    validateAdjs(res.body, 19);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({page: npage})
+      .send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 1, 19);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 20})
+      .send();
+    res.should.have.status(200);
+    npage = res.header['x-npage'];
+    expect(npage).to.be.string;
+    validateAdjs(res.body, 20);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 20, page: npage})
+      .send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 0);
+  })
+  it('should reject bad page key', async () =>  {
+    const [uId, ses, oId] = await createOrg('my org');
+    const acIds = [
+      await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1}),
+      await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4})];
+    await gen(ses, oId, acIds, [20, 0, 0]);
+    let res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 19})
+      .send();
+    res.should.have.status(200);
+    let npage = res.header['x-npage'];
+    expect(npage).to.be.string;
+    console.log('!!!! page: ' + npage);
+    validateAdjs(res.body, 19);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({page: npage + 'ab'})
+      .send();
+    res.should.have.status(400);
+    expect(res.body.message).to.match(/page query param/);
   })
 });

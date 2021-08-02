@@ -8,13 +8,11 @@ import * as accounts from './accounts';
 import * as txndocs from './txndocs';
 import * as org from '../models/org';
 import * as orgs from './orgs';
-import { ParsedQs } from 'qs';
 import { MissingError } from '../common/apperrs';
 import { isReadMethod } from '../common/authzrules';
+import qryext from '../controllers/qryext';
 
 const OID_HDR = 'x-oid';
-
-const qs = (v: string | ParsedQs | string[] | ParsedQs[]) => typeof v === 'string' ? v : undefined;
 
 const hs = (v: string | string[]) => typeof v === 'string' ? v : undefined;
 
@@ -49,6 +47,9 @@ const cacheRoles = async (res: Response): Promise<number[]> => {
 }
 
 export const isAllowed = async (req: Request, res: Response, rsc: string, opts?: ValidOpts) => {
+
+  // TODO extra opt for how much of org to read??????
+
   let allowed = false;
   if (rsc === sessions.SEGMENT) {
     // no perms required for sign in/out sessions (note sign in requires perms and active)
@@ -67,7 +68,7 @@ export const isAllowed = async (req: Request, res: Response, rsc: string, opts?:
     let oId;
     if (rsc === orgs.SEGMENT && rscId) oId = doc.toObjId(rscId, 'orgs id');
     else { // prioritize query oId over header
-      const q = qs(req.query.oId);
+      const q = qryext(req, 'oId');
       if (q) oId = doc.toObjId(q, 'query oId');
       else {
         const h = hs(req.headers[OID_HDR]);
