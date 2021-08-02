@@ -52,14 +52,14 @@ const genArr = (cnts: number[]) => {
 };
 const gen = async (ses: string, oId: string, acIds: string[], cnts: number[]) => {
   const arr = genArr(cnts);
-  // leave room for cnts[1] days event though we only use 1 (due to amt index)
+  // leave room for cnts[1] days event though we only use 1 (due to order index)
   let begAtEnd = ACC_BEGAT + DAY * (cnts[0] + cnts[1] + cnts[2] + 1);
-  const begAtSame = begAtEnd - DAY * cnts[2];
+  const begAtSame = begAtEnd - DAY * cnts[0];
   let n = -1;
   for (let k = 0; k < 3; ++k) { // k=0,2 random, 1 same
     for (let i = 0; i < cnts[k]; ++i) {
       if (k === 0 || k === 2) ++n;
-      const order = (k === 0 || k === 2) ? arr[n] : cnts[0] + cnts[1] - i;
+      const order = (k === 0 || k === 2) ? arr[n] : cnts[0] + cnts[1] - i - 1;
       const amts = [
         {acId: acIds[0], fnId: 1, amt: order + 1},
         {acId: acIds[1], fnId: 1, amt: - (order + 1)}];
@@ -407,7 +407,6 @@ describe('txndocs integration test', () => {
     res.should.have.status(200);
     let npage = res.header['x-npage'];
     expect(npage).to.be.string;
-    console.log('!!!! page: ' + npage);
     validateAdjs(res.body, 19);
     res = await svr.get(PATH)
       .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
@@ -415,5 +414,35 @@ describe('txndocs integration test', () => {
       .send();
     res.should.have.status(400);
     expect(res.body.message).to.match(/page query param/);
+  })
+  it('should resume page when 1st compound key field is the same', async () =>  {
+    const [uId, ses, oId] = await createOrg('my org');
+    const acIds = [
+      await createAcct(ses, oId, {num: 100, name: 'assets', catId: 1}),
+      await createAcct(ses, oId, {num: 400, name: 'revs', catId: 4})];
+    await gen(ses, oId, acIds, [20, 40, 20]);
+    let res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 30})
+      .send();
+    res.should.have.status(200);
+    let npage = res.header['x-npage'];
+    expect(npage).to.be.string;
+    validateAdjs(res.body, 30);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 30, page: npage})
+      .send();
+    res.should.have.status(200);
+    npage = res.header['x-npage'];
+    expect(npage).to.be.string;
+    validateAdjs(res.body, 30, 30);
+    res = await svr.get(PATH)
+      .set('Cookie', cookie.serialize('ses', ses)).set('X-OId', oId)
+      .query({cnt: 30, page: npage})
+      .send();
+    res.should.have.status(200);
+    expect(res.header['x-npage']).to.be.undefined;
+    validateAdjs(res.body, 20, 60);
   })
 });
